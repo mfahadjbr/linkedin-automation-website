@@ -136,37 +136,81 @@ export default function OverviewPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+        {/* Content Distribution Card */}
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Content Distribution</CardTitle>
+            <CardTitle className="text-gray-900 text-lg md:text-xl font-bold">Content Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{ tips:{label:"Tips", color:"#0b64c1"}, wins:{label:"Wins", color:"#e7eff8"}, news:{label:"News", color:"#daebfe"} }}>
-              <PieChart>
-                <Pie dataKey="value" data={[{name:"tips",value:55},{name:"wins",value:10},{name:"news",value:35}]} innerRadius={60} outerRadius={110} paddingAngle={2}>
-                  {["var(--color-tips)","var(--color-wins)","var(--color-news)"].map((c,i)=>(<Cell key={i} fill={c} />))}
-                </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
-              </PieChart>
-            </ChartContainer>
+            <div className="flex justify-center items-center w-full">
+              <div className="w-[220px] h-[180px] sm:w-[260px] sm:h-[200px] md:w-[280px] md:h-[220px] lg:w-[320px] lg:h-[240px] mx-auto">
+                <ChartContainer config={{ tips:{label:"Tips", color:"#0b64c1"}, wins:{label:"Wins", color:"#e7eff8"}, news:{label:"News", color:"#daebfe"} }}>
+                  <PieChart
+                    width={320}
+                    height={240}
+                    className="w-full h-full"
+                  >
+                    <Pie
+                      dataKey="value"
+                      data={[
+                        { name: "tips", value: 55 },
+                        { name: "wins", value: 10 },
+                        { name: "news", value: 35 }
+                      ]}
+                      innerRadius="60%"
+                      outerRadius="100%"
+                      paddingAngle={2}
+                      startAngle={180}
+                      endAngle={-180}
+                      cx="50%"
+                      cy="50%"
+                    >
+                      {["var(--color-tips)", "var(--color-wins)", "var(--color-news)"].map((c, i) => (
+                        <Cell key={i} fill={c} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* Profile Strength Card */}
+        <Card className="bg-white border border-gray-200 shadow-sm">
           <CardHeader>
-            <CardTitle>Profile Strength</CardTitle>
+            <CardTitle className="text-gray-900 text-lg md:text-xl font-bold">Profile Strength</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{ A: { label: "Profile Strength", color: "#0b64c1" } }}>
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                <PolarGrid />
-                <PolarAngleAxis dataKey="subject" />
-                <PolarRadiusAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Radar name="Strength" dataKey="A" stroke="var(--color-A)" fill="var(--color-A)" fillOpacity={0.3} />
-              </RadarChart>
-            </ChartContainer>
+            <div className="flex justify-center items-center w-full">
+              <div className="w-[220px] h-[180px] sm:w-[260px] sm:h-[200px] md:w-[280px] md:h-[220px] lg:w-[320px] lg:h-[240px] mx-auto">
+                <ChartContainer config={{ A: { label: "Profile Strength", color: "#0b64c1" } }}>
+                  <RadarChart
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="80%"
+                    data={radarData}
+                    width={320}
+                    height={240}
+                    className="w-full h-full"
+                  >
+                    <PolarGrid />
+                    <PolarAngleAxis dataKey="subject" />
+                    <PolarRadiusAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Radar
+                      name="Strength"
+                      dataKey="A"
+                      stroke="var(--color-A)"
+                      fill="var(--color-A)"
+                      fillOpacity={0.3}
+                    />
+                  </RadarChart>
+                </ChartContainer>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
