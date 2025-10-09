@@ -87,7 +87,9 @@ export default function PostsPage() {
            <div className="flex gap-3">
              <Button className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white text-sm md:text-base">
                <Plus className="h-4 w-4 mr-2" />
-               Upload New Video
+               <Link href="/dashboard/upload">
+               Upload New Post
+               </Link>
              </Button>
            </div>
         </div>
