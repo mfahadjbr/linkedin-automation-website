@@ -90,6 +90,9 @@ export default function LoginPage() {
                         "Sign in"
                       )}
                     </Button>
+                    <p className="text-xs md:text-sm text-muted-foreground text-center mt-2">
+                      Don't have an account? <a href="/signup" className="underline">Sign up</a>
+                    </p>
                   </form>
                 </CardContent>
               </Card>
