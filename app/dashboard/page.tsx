@@ -1,10 +1,13 @@
 "use client"
 
+import { useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
-import { Users, UserCheck, Activity, TrendingUp, Calendar } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, BarChart, Bar, PieChart, Pie, Cell } from "recharts"
+import { Users, UserCheck, TrendingUp, Calendar, RefreshCcw, BarChart3, Eye, Heart, MessageCircle, Share2, MousePointerClick, Gauge, UserPlus2, Users2 } from "lucide-react"
+import useAnalytics from "@/lib/hooks/analytics/useAnalytics"
+import { Spinner } from "@/components/ui/spinner"
 
 const lineData = [
   { name: "Jan", views: 100, likes: 20 },
@@ -33,10 +36,26 @@ const barData = [
 ]
 
 export default function OverviewPage() {
+  const { data, isLoading, error, lastUpdated, source, fetchAnalytics } = useAnalytics()
+
+  useEffect(() => {
+    // Default load from cached/dashboard data (refresh=false)
+    fetchAnalytics(false)
+  }, [fetchAnalytics])
+
   return (
     <div className="space-y-3 md:space-y-4 p-2 md:p-3" style={{ backgroundColor: '#daebfe' }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-2xl md:text-2xl font-bold">Dashboard Overview</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl md:text-2xl font-bold">Dashboard Overview</h1>
+          <Button size="sm" variant="outline" onClick={() => fetchAnalytics(true)} disabled={isLoading} className={`${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2"><Spinner size="sm" /><span>Refreshing…</span></span>
+            ) : (
+              <span className="inline-flex items-center gap-2"><RefreshCcw className="h-4 w-4" /> Refresh analytics</span>
+            )}
+          </Button>
+        </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" asChild className="text-xs md:text-sm">
             <a href="/dashboard/posts">LinkedIn Posts</a>
@@ -47,15 +66,23 @@ export default function OverviewPage() {
         </div>
       </div>
 
+      {/* Analytics status */}
+      {error && (
+        <div className="text-red-600 text-sm">{error}</div>
+      )}
+      {data && (
+        <div className="text-xs text-muted-foreground">Last updated: {lastUpdated || '—'} {source ? `(source: ${source})` : ''}</div>
+      )}
+
       {/* KPI cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="relative overflow-hidden">
           <div className="absolute top-0 right-0 w-16 h-16 bg-blue-100 rounded-full -translate-y-8 translate-x-8"></div>
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <Users className="h-6 w-6 md:h-8 md:w-8 text-blue-600" />
+              <BarChart3 className="h-6 w-6 md:h-8 md:w-8 text-blue-600" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">245</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{data?.total_posts ?? (isLoading ? '—' : 0)}</div>
             <div className="text-xs md:text-sm text-gray-500">Total Posts</div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600"></div>
           </CardContent>
@@ -65,10 +92,10 @@ export default function OverviewPage() {
           <div className="absolute top-0 right-0 w-16 h-16 bg-purple-100 rounded-full -translate-y-8 translate-x-8"></div>
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <UserCheck className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
+              <Eye className="h-6 w-6 md:h-8 md:w-8 text-purple-600" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">89</div>
-            <div className="text-xs md:text-sm text-gray-500">Published Posts</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{data?.total_impressions ?? (isLoading ? '—' : 0)}</div>
+            <div className="text-xs md:text-sm text-gray-500">Total Impressions</div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-purple-600"></div>
           </CardContent>
         </Card>
@@ -79,8 +106,8 @@ export default function OverviewPage() {
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <TrendingUp className="h-6 w-6 md:h-8 md:w-8 text-red-600" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">456</div>
-            <div className="text-xs md:text-sm text-gray-500">Total Views</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{data?.total_engagement ?? (isLoading ? '—' : 0)}</div>
+            <div className="text-xs md:text-sm text-gray-500">Total Engagement</div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-red-600"></div>
           </CardContent>
         </Card>
@@ -89,13 +116,24 @@ export default function OverviewPage() {
           <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-100 rounded-full -translate-y-8 translate-x-8"></div>
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <Calendar className="h-6 w-6 md:h-8 md:w-8 text-yellow-600" />
+              <Users2 className="h-6 w-6 md:h-8 md:w-8 text-yellow-600" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">23</div>
-            <div className="text-xs md:text-sm text-gray-500">Total Impressions</div>
+            <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{data?.follower_count ?? (isLoading ? '—' : 0)}</div>
+            <div className="text-xs md:text-sm text-gray-500">Follower Count</div>
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-yellow-600"></div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Detailed stats cards */}
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <StatCard icon={<Users className="h-5 w-5 text-blue-600" />} label="Connections" value={data?.connection_count} isLoading={isLoading} barClass="bg-blue-600" />
+        <StatCard icon={<Heart className="h-5 w-5 text-rose-600" />} label="Total Likes" value={data?.total_likes} isLoading={isLoading} barClass="bg-rose-600" />
+        <StatCard icon={<MessageCircle className="h-5 w-5 text-emerald-600" />} label="Total Comments" value={data?.total_comments} isLoading={isLoading} barClass="bg-emerald-600" />
+        <StatCard icon={<Share2 className="h-5 w-5 text-purple-600" />} label="Total Shares" value={data?.total_shares} isLoading={isLoading} barClass="bg-purple-600" />
+        <StatCard icon={<MousePointerClick className="h-5 w-5 text-orange-600" />} label="Total Clicks" value={data?.total_clicks} isLoading={isLoading} barClass="bg-orange-600" />
+        <StatCard icon={<Gauge className="h-5 w-5 text-teal-600" />} label="Avg Engagement Rate" value={typeof data?.average_engagement_rate === 'number' ? `${(data!.average_engagement_rate * 100).toFixed(2)}%` : undefined} isLoading={isLoading} barClass="bg-teal-600" />
+        <StatCard icon={<Calendar className="h-5 w-5 text-indigo-600" />} label="Posts (30 days)" value={data?.posts_last_30_days} isLoading={isLoading} barClass="bg-indigo-600" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -316,6 +354,21 @@ export default function OverviewPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+function StatCard({ icon, label, value, isLoading, barClass }: { icon: React.ReactNode, label: string, value?: number | string, isLoading: boolean, barClass: string }) {
+  return (
+    <Card className="relative overflow-hidden">
+      <CardContent className="p-4 md:p-6">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+          {icon}
+        </div>
+        <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{value ?? (isLoading ? '—' : 0)}</div>
+        <div className="text-xs md:text-sm text-gray-500">{label}</div>
+        <div className={`absolute bottom-0 left-0 right-0 h-1 ${barClass}`}></div>
+      </CardContent>
+    </Card>
   )
 }
 
