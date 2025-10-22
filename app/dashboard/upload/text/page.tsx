@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
-import TextEditorToolbox from "@/components/text-editor-toolbox"
+import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -39,7 +39,7 @@ export default function TextUploadPage() {
             Back to Upload Options
           </Link>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Create Text Post</h1>
-          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Write a text-only post with formatting tools for bold, italic, and bullet points</p>
+          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Write a text-only post</p>
         </div>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -51,10 +51,11 @@ export default function TextUploadPage() {
             <CardContent className="p-4 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Text Post</h2>
               
-              <TextEditorToolbox
+              <Textarea
                 value={description}
-                onChange={setDescription}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Write your text post here..."
+                className="min-h-[180px]"
               />
               <div className="mt-4">
                 <Label className="text-sm md:text-base mb-1 block">Visibility</Label>

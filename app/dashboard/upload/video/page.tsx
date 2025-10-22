@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
-import TextEditorToolbox from "@/components/text-editor-toolbox"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function VideoUploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -149,10 +149,11 @@ export default function VideoUploadPage() {
           <Card className="bg-white border border-gray-200">
             <CardContent className="p-4 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Post Description</h2>
-              <TextEditorToolbox
+              <Textarea
                 value={description}
-                onChange={setDescription}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Write your post description here..."
+                className="min-h-[160px]"
               />
             </CardContent>
           </Card>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, ArrowLeft, X, Image as ImageIcon } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
-import TextEditorToolbox from "@/components/text-editor-toolbox"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function ImagesUploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -68,7 +68,7 @@ export default function ImagesUploadPage() {
             Back to Upload Options
           </Link>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Upload Your Images</h1>
-          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Upload multiple images and write a detailed description with formatting tools</p>
+          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Upload multiple images and write a description</p>
         </div>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -158,10 +158,11 @@ export default function ImagesUploadPage() {
           <Card className="bg-white border border-gray-200">
             <CardContent className="p-4 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Post Description</h2>
-              <TextEditorToolbox
+              <Textarea
                 value={description}
-                onChange={setDescription}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Write your post description here..."
+                className="min-h-[160px]"
               />
             </CardContent>
           </Card>
