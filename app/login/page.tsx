@@ -8,13 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from "@/lib/hooks"
+import { useAuthContext } from "@/lib/hooks/auth/AuthContext"
 import { useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isLoading, isAuthenticated } = useAuth()
+  const { login, isLoading, isAuthenticated } = useAuthContext()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
