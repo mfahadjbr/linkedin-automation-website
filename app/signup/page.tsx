@@ -1,11 +1,47 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import { useAuthContext } from "@/lib/hooks/auth/AuthContext"
+import Link from "next/link"
 
 export default function SignupPage() {
+  const router = useRouter()
+  const { signup, isLoading } = useAuthContext()
+  const [fullName, setFullName] = useState("")
+  const [username, setUsername] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    try {
+      await signup({
+        email,
+        username,
+        full_name: fullName,
+        password,
+      })
+      setSuccess("Account created successfully. You can now log in.")
+      // Redirect to login after a brief pause so the user can read the message
+      setTimeout(() => router.replace("/login"), 800)
+    } catch (err: any) {
+      setError(err?.message || "Signup failed. Please try again.")
+    }
+  }
+
   return (
     <div className="min-h-screen">
       <Header />
@@ -23,20 +59,80 @@ export default function SignupPage() {
                   <CardDescription className="text-sm md:text-base">Start your journey with Linkedin Automation</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4 md:p-6 pt-2">
-                  <form className="space-y-4 md:space-y-6">
+                  <form className="space-y-4 md:space-y-6" onSubmit={onSubmit}>
+                    {error && (
+                      <Alert variant="destructive">
+                        <AlertTitle>Signup failed</AlertTitle>
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+                    {success && (
+                      <Alert>
+                        <AlertTitle>Success</AlertTitle>
+                        <AlertDescription>{success}</AlertDescription>
+                      </Alert>
+                    )}
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-sm md:text-base">Full name</Label>
-                      <Input id="name" type="text" placeholder="Jane Doe" required className="h-10 md:h-11 text-sm md:text-base" />
+                      <Label htmlFor="full_name" className="text-sm md:text-base">Full name</Label>
+                      <Input
+                        id="full_name"
+                        type="text"
+                        placeholder="Jane Doe"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="h-10 md:h-11 text-sm md:text-base"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="username" className="text-sm md:text-base">Username</Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="janedoe"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className="h-10 md:h-11 text-sm md:text-base"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm md:text-base">Email</Label>
-                      <Input id="email" type="email" placeholder="you@example.com" required className="h-10 md:h-11 text-sm md:text-base" />
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-10 md:h-11 text-sm md:text-base"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="password" className="text-sm md:text-base">Password</Label>
-                      <Input id="password" type="password" placeholder="••••••••" required className="h-10 md:h-11 text-sm md:text-base" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="••••••••"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-10 md:h-11 text-sm md:text-base"
+                      />
                     </div>
-                    <Button type="submit" className="w-full h-10 md:h-11 text-sm md:text-base">Create account</Button>
+                    <Button type="submit" className="w-full h-10 md:h-11 text-sm md:text-base" disabled={isLoading}>
+                      {isLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Spinner size="sm" />
+                          <span>Creating account…</span>
+                        </span>
+                      ) : (
+                        "Create account"
+                      )}
+                    </Button>
+                    <div className="text-xs md:text-sm text-muted-foreground text-center">
+                      Already have an account? <Link href="/login" className="underline">Log in</Link>
+                    </div>
                   </form>
                 </CardContent>
               </Card>

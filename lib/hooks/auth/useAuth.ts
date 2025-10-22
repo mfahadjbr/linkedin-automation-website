@@ -66,7 +66,8 @@ export default function useAuth() {
 
   const signup = useCallback(async (data: SignupData): Promise<SignupResponse> => {
     if (DEBUG_LOGS) console.log('📝 Starting signup process with data:', { ...data, password: '[REDACTED]' })
-    
+    // Reuse global loading state via reducer (keep reducer unchanged)
+    dispatch({ type: 'SET_LOADING', payload: true })
     try {
       const requestData = {
         ...data,
@@ -100,6 +101,9 @@ export default function useAuth() {
       } else {
         throw new Error('Signup failed due to network error')
       }
+    } finally {
+      // Ensure loading state is cleared regardless of outcome
+      dispatch({ type: 'SET_LOADING', payload: false })
     }
   }, [])
 
