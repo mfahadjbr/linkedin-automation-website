@@ -16,15 +16,19 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     try {
+      setSubmitting(true)
       await login({ email, password })
       router.push("/dashboard")
     } catch (err: any) {
       setError(err?.message || "Login failed. Please try again.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -55,8 +59,13 @@ export default function LoginPage() {
                       <Input id="password" type="password" placeholder="123123123" value={password} onChange={(e)=>setPassword(e.target.value)} required className="h-10 md:h-11 text-sm md:text-base" />
                     </div>
                     {error && (<p className="text-xs md:text-sm text-destructive">{error}</p>)}
-                    <Button type="submit" className="w-full h-10 md:h-11 cursor-pointer text-sm md:text-base" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign in"}
+                    <Button
+                      type="submit"
+                      className={`w-full h-10 md:h-11 text-sm md:text-base transition-opacity ${submitting ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                      disabled={submitting}
+                      aria-busy={submitting}
+                    >
+                      {submitting ? "Signing in..." : "Sign in"}
                     </Button>
                   </form>
                 </CardContent>
