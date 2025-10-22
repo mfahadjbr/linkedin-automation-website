@@ -38,12 +38,23 @@ function MediaPostsTab() {
                         <div className="text-xs text-gray-400 mt-1">Status: {post.status}</div>
                       </div>
                       {tab === 'image' && post.image_urn && (
-                        <img src={`https://media.licdn.com/dms/image/${post.image_urn.split(':').pop()}`} alt="Image" className="w-32 h-32 object-cover rounded" />
+                        <img
+                          src={`https://media.licdn.com/dms/image/${post.image_urn.split(':').pop()?.toLowerCase()}/original`}
+                          alt={post.image_filename || 'Image'}
+                          className="w-32 h-32 object-cover rounded"
+                          loading="lazy"
+                        />
                       )}
                       {tab === 'multi-image' && post.images && (
                         <div className="flex gap-2 flex-wrap mt-2 md:mt-0">
                           {post.images.map((img: any, idx: number) => (
-                            <img key={idx} src={`https://media.licdn.com/dms/image/${img.asset_urn.split(':').pop()}`} alt={img.filename} className="w-20 h-20 object-cover rounded" />
+                            <img
+                              key={idx}
+                              src={`https://media.licdn.com/dms/image/${img.asset_urn.split(':').pop()?.toLowerCase()}/original`}
+                              alt={img.filename}
+                              className="w-20 h-20 object-cover rounded"
+                              loading="lazy"
+                            />
                           ))}
                         </div>
                       )}

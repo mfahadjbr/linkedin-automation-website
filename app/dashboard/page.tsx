@@ -38,17 +38,23 @@ const barData = [
 export default function OverviewPage() {
   const { data, isLoading, error, lastUpdated, source, fetchAnalytics } = useAnalytics()
 
+  // Only call with refresh=false on mount
   useEffect(() => {
-    // Default load from cached/dashboard data (refresh=false)
     fetchAnalytics(false)
-  }, [fetchAnalytics])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Only call with refresh=true when user clicks refresh
+  const handleRefresh = () => {
+    fetchAnalytics(true)
+  }
 
   return (
     <div className="space-y-3 md:space-y-4 p-2 md:p-3" style={{ backgroundColor: '#daebfe' }}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl md:text-2xl font-bold">Dashboard Overview</h1>
-          <Button size="sm" variant="outline" onClick={() => fetchAnalytics(true)} disabled={isLoading} className={`${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+          <Button size="sm" variant="outline" onClick={handleRefresh} disabled={isLoading} className={`${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}>
             {isLoading ? (
               <span className="inline-flex items-center gap-2"><Spinner size="sm" /><span>Refreshing…</span></span>
             ) : (
