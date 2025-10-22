@@ -6,15 +6,23 @@ import { ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import TextEditorToolbox from "@/components/text-editor-toolbox"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import useUpload from "@/lib/hooks/upload/useUpload"
 
 export default function TextUploadPage() {
   const [description, setDescription] = useState("")
+  const [visibility, setVisibility] = useState<string>("PUBLIC")
+  const { createTextPost, isLoading, error, successMessage, lastPost, resetUpload } = useUpload()
 
-  const handleSubmit = () => {
-    if (description.trim()) {
-      // Handle upload logic here
-      console.log("Text post:", description)
-      alert("Text post created successfully!")
+  const handleSubmit = async () => {
+    if (!description.trim()) return
+    try {
+      await createTextPost({ text: description.trim(), visibility })
+    } catch (e) {
+      // error state is already handled in hook
     }
   }
 
@@ -43,6 +51,40 @@ export default function TextUploadPage() {
                 onChange={setDescription}
                 placeholder="Write your text post here..."
               />
+              <div className="mt-4">
+                <Label className="text-sm md:text-base mb-1 block">Visibility</Label>
+                <Select value={visibility} onValueChange={setVisibility}>
+                  <SelectTrigger className="w-full sm:w-60">
+                    <SelectValue placeholder="Select visibility" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PUBLIC">PUBLIC</SelectItem>
+                    <SelectItem value="CONNECTIONS">CONNECTIONS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {error && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle>Post failed</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {successMessage && (
+                <Alert className="mt-4">
+                  <AlertTitle>Success</AlertTitle>
+                  <AlertDescription>
+                    {successMessage}
+                    {lastPost?.post_url && (
+                      <>
+                        {" "}
+                        <a href={lastPost.post_url} target="_blank" rel="noopener noreferrer" className="underline">View on LinkedIn</a>
+                      </>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -51,10 +93,17 @@ export default function TextUploadPage() {
         <div className="flex justify-center mt-6 md:mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={!description.trim()}
-            className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
+            disabled={!description.trim() || isLoading}
+            className={`bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            Create Text Post
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size="sm" />
+                <span>Posting…</span>
+              </span>
+            ) : (
+              "Create Text Post"
+            )}
           </Button>
         </div>
       </div>
