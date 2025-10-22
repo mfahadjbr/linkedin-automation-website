@@ -11,6 +11,7 @@ export interface CreatedPost {
   visibility: Visibility
   post_url: string
   posted_at: string
+  image_urn?: string
 }
 
 export interface TextPostResponse {

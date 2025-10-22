@@ -242,14 +242,18 @@ export default function useAuth() {
     const authHeaders = getAuthHeaders()
     
     try {
+      const data = options.body || options.data
+      const mergedHeaders: Record<string, any> = { ...authHeaders, ...options.headers }
+      // If sending FormData, let axios set the Content-Type with boundary automatically
+      if (typeof FormData !== 'undefined' && data instanceof FormData) {
+        if (DEBUG_LOGS) console.log('📦 Detected FormData payload, removing default Content-Type header')
+        delete mergedHeaders['Content-Type']
+      }
       const response = await axios({
         url,
         method: options.method || 'GET',
-        data: options.body || options.data,
-        headers: {
-          ...authHeaders,
-          ...options.headers,
-        },
+        data,
+        headers: mergedHeaders,
       })
       
       if (DEBUG_LOGS) console.log('✅ Authenticated request successful:', {

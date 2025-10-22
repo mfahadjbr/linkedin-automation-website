@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import useUpload from "@/lib/hooks/upload/useUpload"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function ImagesUploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -56,24 +59,37 @@ export default function ImagesUploadPage() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const { createImagePost, isLoading, error, successMessage, lastPost, resetUpload } = useUpload()
+
   const parseUrls = (raw: string) => raw
     .split(/\n|,|\s+/)
     .map(s => s.trim())
     .filter(Boolean)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (mode === 'file') {
       if (selectedFiles.length > 0 && description.trim()) {
-        console.log("Uploading images (files):", selectedFiles.map(f => f.name))
-        console.log("Description:", description)
-        alert("Images uploaded successfully!")
+        const first = selectedFiles[0]
+        try {
+          const res = await createImagePost({ file: first, text: description.trim(), visibility: 'PUBLIC' })
+          if (res?.success) {
+            setSelectedFiles([])
+            setDescription('')
+            setImageUrlsInput('')
+          }
+        } catch {}
       }
     } else {
       const urls = parseUrls(imageUrlsInput)
       if (urls.length > 0 && description.trim()) {
-        console.log("Uploading images (urls):", urls)
-        console.log("Description:", description)
-        alert("Images (via URL) submitted successfully!")
+        try {
+          const res = await createImagePost({ imageUrl: urls[0], text: description.trim(), visibility: 'PUBLIC' })
+          if (res?.success) {
+            setSelectedFiles([])
+            setDescription('')
+            setImageUrlsInput('')
+          }
+        } catch {}
       }
     }
   }
@@ -217,6 +233,26 @@ export default function ImagesUploadPage() {
                 placeholder="Write your post description here..."
                 className="min-h-[160px]"
               />
+                {error && (
+                  <Alert variant="destructive" className="mt-4">
+                    <AlertTitle>Post failed</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                {successMessage && (
+                  <Alert className="mt-4">
+                    <AlertTitle>Success</AlertTitle>
+                    <AlertDescription>
+                      {successMessage}
+                      {lastPost?.post_url && (
+                        <>
+                          {" "}
+                          <a href={lastPost.post_url} target="_blank" rel="noopener noreferrer" className="underline">View on LinkedIn</a>
+                        </>
+                      )}
+                    </AlertDescription>
+                  </Alert>
+                )}
             </CardContent>
           </Card>
         </div>
@@ -225,10 +261,17 @@ export default function ImagesUploadPage() {
         <div className="flex justify-center mt-6 md:mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={(mode === 'file' ? selectedFiles.length === 0 : parseUrls(imageUrlsInput).length === 0) || !description.trim()}
-            className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
+              disabled={(mode === 'file' ? selectedFiles.length === 0 : parseUrls(imageUrlsInput).length === 0) || !description.trim() || isLoading}
+              className={`bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-            {mode === 'file' ? 'Upload Images & Post' : 'Submit Image URLs & Post'}
+              {isLoading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Spinner size="sm" />
+                  <span>Posting…</span>
+                </span>
+              ) : (
+                mode === 'file' ? 'Upload Images & Post' : 'Submit Image URLs & Post'
+              )}
           </Button>
         </div>
       </div>
