@@ -2,6 +2,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useAuthContext } from './AuthContext';
 import { useRouter } from 'next/navigation';
+import { FullPageSpinner } from '@/components/ui/spinner';
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -18,8 +19,9 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // While loading or redirecting, render nothing
-  if (isLoading || !isAuthenticated) return null;
+  // While loading, show a spinner. If not authenticated, render nothing while redirecting.
+  if (isLoading) return <FullPageSpinner label="Checking session..." />;
+  if (!isAuthenticated) return null;
 
   return <>{children}</>;
 }

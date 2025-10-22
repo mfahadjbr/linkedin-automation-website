@@ -105,6 +105,8 @@ export default function useAuth() {
 
   const login = useCallback(async (data: LoginData): Promise<AuthResponse> => {
     if (DEBUG_LOGS) console.log('🔐 Starting login process with email:', data.email)
+    // indicate loading to avoid AuthGuard redirect race during navigation
+    dispatch({ type: 'SET_LOADING', payload: true })
     
     // Check if there's already an active session
     const existingToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
@@ -156,8 +158,8 @@ export default function useAuth() {
       
       if (DEBUG_LOGS) console.log('💾 Saved auth data and session to localStorage')
       
-      // Update auth state
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user: response.data.user, token: response.data.access_token } })
+  // Update auth state
+  dispatch({ type: 'LOGIN_SUCCESS', payload: { user: response.data.user, token: response.data.access_token } })
       if (DEBUG_LOGS) console.log('🔄 Updated auth state to authenticated')
 
       // ...existing code...
@@ -178,8 +180,10 @@ export default function useAuth() {
           statusText: error.response?.statusText,
           data: error.response?.data,
         })
+        dispatch({ type: 'SET_LOADING', payload: false })
         throw new Error(errorMessage)
       } else {
+        dispatch({ type: 'SET_LOADING', payload: false })
         throw new Error('Network error. Please check your connection and try again.')
       }
     }

@@ -9,14 +9,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/hooks"
+import { useEffect } from "react"
+import { Spinner } from "@/components/ui/spinner"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login, isLoading } = useAuth()
+  const { login, isLoading, isAuthenticated } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  // If already authenticated, redirect away from /login
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace('/dashboard')
+    }
+  }, [isLoading, isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +33,8 @@ export default function LoginPage() {
     try {
       setSubmitting(true)
       await login({ email, password })
-      router.push("/dashboard")
+      // Replace to avoid going back to login
+      router.replace("/dashboard")
     } catch (err: any) {
       setError(err?.message || "Login failed. Please try again.")
     } finally {
@@ -65,7 +75,14 @@ export default function LoginPage() {
                       disabled={submitting}
                       aria-busy={submitting}
                     >
-                      {submitting ? "Signing in..." : "Sign in"}
+                      {submitting ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Spinner size="sm" />
+                          <span>Signing in...</span>
+                        </span>
+                      ) : (
+                        "Sign in"
+                      )}
                     </Button>
                   </form>
                 </CardContent>
