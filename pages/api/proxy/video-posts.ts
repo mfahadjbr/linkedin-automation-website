@@ -2,18 +2,25 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { limit = 10, offset = 0 } = req.query
-  const apiUrl = `https://backend.postsiva.com/linkedin/video-post/my-posts?limit=${limit}&offset=${offset}`
-  const authHeader = req.headers['authorization'] || req.cookies['auth-token']
+  // Use your actual cookie name for the token
+  const token = req.cookies['token']
+
+  if (!token) {
+    return res.status(401).json({ success: false, error: 'No auth token found in cookies.' })
+  }
+
+  const backendUrl = `https://backend.postsiva.com/linkedin/video-post/my-posts?limit=${limit}&offset=${offset}`
+
   try {
-    const apiRes = await fetch(apiUrl, {
+    const backendRes = await fetch(backendUrl, {
       headers: {
-        'accept': 'application/json',
-        'Authorization': authHeader || ''
+        'Authorization': `Bearer ${token}`,
+        'accept': 'application/json'
       }
     })
-    const data = await apiRes.json()
-    res.status(apiRes.status).json(data)
+    const data = await backendRes.json()
+    res.status(backendRes.status).json(data)
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Failed to fetch video posts' })
+    res.status(500).json({ success: false, error: err.message || 'Proxy error' })
   }
 }
