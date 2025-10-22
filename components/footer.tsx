@@ -94,12 +94,19 @@ export function Footer() {
                 Documentation
               </Link>
               <Link
-                href="/privacy"
+                href="https://privacy-policy.postsiva.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                href="https://terms.postsiva.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Terms of Service
               </Link>
             </div>
