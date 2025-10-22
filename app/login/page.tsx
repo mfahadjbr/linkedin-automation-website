@@ -27,7 +27,7 @@ export default function LoginPage() {
     if (!isLoading && isAuthenticated) {
       ;(async () => {
         const hasToken = await hasLinkedinToken()
-        router.replace(hasToken ? '/dashboard' : '/dashboard/integrations/linkedin')
+        router.replace(hasToken ? '/dashboard' : '/connect/linkedin')
       })()
     }
   }, [isLoading, isAuthenticated, router, hasLinkedinToken])
@@ -40,7 +40,7 @@ export default function LoginPage() {
   await login({ email, password })
   const hasToken = await hasLinkedinToken()
   // Replace to avoid going back to login
-  router.replace(hasToken ? "/dashboard" : "/dashboard/integrations/linkedin")
+        router.replace(hasToken ? "/dashboard" : "/connect/linkedin")
     } catch (err: any) {
       setError(err?.message || "Login failed. Please try again.")
     } finally {
