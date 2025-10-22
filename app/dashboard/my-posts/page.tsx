@@ -1,14 +1,12 @@
-
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-
-
+import { useEffect, useState } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import usePosts from "@/lib/hooks/posts/usePosts"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import Link from "next/link"
 
 function MediaPostsTab() {
   const [tab, setTab] = useState<'image' | 'multi-image'>('image')
@@ -99,7 +97,7 @@ function TextPostsTab() {
   )
 }
 
-export default function PostsPage() {
+export default function MyPostsPage() {
   return (
     <div className="max-w-4xl mx-auto py-8 px-2 md:px-0">
       <h1 className="text-2xl font-bold mb-6">My LinkedIn Posts</h1>
@@ -118,5 +116,3 @@ export default function PostsPage() {
     </div>
   )
 }
-
-
