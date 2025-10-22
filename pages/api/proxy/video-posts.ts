@@ -18,8 +18,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'accept': 'application/json'
       }
     })
-    const data = await backendRes.json()
-    res.status(backendRes.status).json(data)
+  const data = await backendRes.json()
+  console.log('Video posts backend response:', data)
+  res.status(backendRes.status).json(data)
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Proxy error' })
   }

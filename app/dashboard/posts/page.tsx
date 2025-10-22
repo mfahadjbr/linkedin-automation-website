@@ -49,8 +49,7 @@ function MediaPostsTab() {
                       </div>
                       {tab === 'image' && post.image_urn && (() => {
                         const assetId = post.image_urn.split(':').pop();
-                        const assetType = assetId?.substring(0, 3) || 'C4D';
-                        const imgUrl = `https://media.licdn.com/dms/image/${assetType}/${assetId}/original`;
+                        const imgUrl = `https://media.licdn.com/dms/image/C4D/${assetId}/original`;
                         console.log('Image Post URL:', imgUrl, post);
                         return (
                           <img
