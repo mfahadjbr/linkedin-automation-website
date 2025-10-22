@@ -20,7 +20,12 @@ export default function TextUploadPage() {
   const handleSubmit = async () => {
     if (!description.trim()) return
     try {
-      await createTextPost({ text: description.trim(), visibility })
+      const res = await createTextPost({ text: description.trim(), visibility })
+      if (res?.success) {
+        // Clear fields after successful posting
+        setDescription("")
+        setVisibility("PUBLIC")
+      }
     } catch (e) {
       // error state is already handled in hook
     }
