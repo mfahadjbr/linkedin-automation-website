@@ -3,7 +3,7 @@
 import { useCallback, useReducer } from 'react'
 import { useAuthContext } from '@/lib/hooks/auth/AuthContext'
 import { uploadReducer, initialUploadState } from './Reducers/uploadReducer'
-import type { TextPostPayload, TextPostResponse, Visibility } from './types/uploadTypes'
+import type { TextPostPayload, TextPostResponse, Visibility, MultiImagePostResponse } from './types/uploadTypes'
 import { DEBUG_LOGS } from '@/lib/config/appConfig'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.postsiva.com/'
@@ -101,10 +101,68 @@ export default function useUpload() {
     }
   }, [fetchWithAuth])
 
+  const createMultiImagePost = useCallback(async ({ files, imageUrls, text, visibility }: { files?: File[]; imageUrls?: string[]; text?: string; visibility?: Visibility }) => {
+    const fileCount = files?.length || 0
+    const urlCount = imageUrls?.filter(Boolean).length || 0
+    const total = fileCount + urlCount
+    if (DEBUG_LOGS) console.log('🖼️🖼️ [Upload] Starting createMultiImagePost', { fileCount, urlCount, total, visibility })
+
+    if (total < 2) {
+      const msg = 'Please provide at least 2 images (files, URLs, or both)'
+      if (DEBUG_LOGS) console.warn('⚠️ [Upload] ' + msg)
+      dispatch({ type: 'SET_ERROR', payload: msg })
+      return { success: false, message: msg, post: null, error: msg } as MultiImagePostResponse
+    }
+    if (total > 20) {
+      const msg = 'You can upload at most 20 images'
+      if (DEBUG_LOGS) console.warn('⚠️ [Upload] ' + msg)
+      dispatch({ type: 'SET_ERROR', payload: msg })
+      return { success: false, message: msg, post: null, error: msg } as MultiImagePostResponse
+    }
+
+    dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_ERROR', payload: null })
+    dispatch({ type: 'SET_SUCCESS', payload: null })
+    dispatch({ type: 'SET_POST', payload: null })
+
+    try {
+      const form = new FormData()
+      files?.forEach((f) => form.append('images', f))
+      if (urlCount > 0) form.append('image_urls', imageUrls!.filter(Boolean).join(','))
+      if (text) form.append('text', text)
+      form.append('visibility', visibility || 'PUBLIC')
+
+      const url = `${API_BASE}linkedin/image-post/multi/`
+      if (DEBUG_LOGS) console.log('🌐 [Upload] Request URL:', url, 'payload', { files: fileCount, urls: urlCount })
+      const res = await fetchWithAuth(url, { method: 'POST', data: form })
+      const data = res.data as MultiImagePostResponse
+      if (DEBUG_LOGS) console.log('✅ [Upload] Multi image response', { success: data?.success, message: data?.message, count: data?.post?.image_count, postId: data?.post?.post_id })
+
+      if (!data?.success) {
+        const msg = data?.message || data?.error || 'Failed to create multi-image post'
+        dispatch({ type: 'SET_ERROR', payload: msg })
+        return data
+      }
+
+      dispatch({ type: 'SET_POST', payload: data.post || null })
+      dispatch({ type: 'SET_SUCCESS', payload: data.message || 'Carousel post created successfully' })
+      return data
+    } catch (err: any) {
+      const message = err?.message || 'Failed to create multi-image post'
+      if (DEBUG_LOGS) console.error('❌ [Upload] Exception during createMultiImagePost', { message, err })
+      dispatch({ type: 'SET_ERROR', payload: message })
+      throw err
+    } finally {
+      if (DEBUG_LOGS) console.log('🔚 [Upload] Finished createMultiImagePost')
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [fetchWithAuth])
+
   return {
     ...state,
     createTextPost,
     createImagePost,
+    createMultiImagePost,
     resetUpload,
   }
 }

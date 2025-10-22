@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, ArrowLeft, X, Image as ImageIcon, Link as LinkIcon, List } from "lucide-react"
+import { Upload, ArrowLeft, X, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Textarea } from "@/components/ui/textarea"
@@ -17,7 +17,7 @@ export default function ImagesUploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [description, setDescription] = useState("")
   const [isDragging, setIsDragging] = useState(false)
-  const [mode, setMode] = useState<'file' | 'url'>("file")
+  const [mode, setMode] = useState<'file' | 'url' | 'both'>("file")
   const [imageUrlsInput, setImageUrlsInput] = useState("")
 
   const handleFileSelect = (files: FileList) => {
@@ -59,7 +59,7 @@ export default function ImagesUploadPage() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
-  const { createImagePost, isLoading, error, successMessage, lastPost, resetUpload } = useUpload()
+  const { createImagePost, createMultiImagePost, isLoading, error, successMessage, lastPost, resetUpload } = useUpload()
 
   const parseUrls = (raw: string) => raw
     .split(/\n|,|\s+/)
@@ -67,30 +67,41 @@ export default function ImagesUploadPage() {
     .filter(Boolean)
 
   const handleSubmit = async () => {
-    if (mode === 'file') {
-      if (selectedFiles.length > 0 && description.trim()) {
-        const first = selectedFiles[0]
-        try {
-          const res = await createImagePost({ file: first, text: description.trim(), visibility: 'PUBLIC' })
-          if (res?.success) {
-            setSelectedFiles([])
-            setDescription('')
-            setImageUrlsInput('')
-          }
-        } catch {}
-      }
-    } else {
-      const urls = parseUrls(imageUrlsInput)
-      if (urls.length > 0 && description.trim()) {
-        try {
-          const res = await createImagePost({ imageUrl: urls[0], text: description.trim(), visibility: 'PUBLIC' })
-          if (res?.success) {
-            setSelectedFiles([])
-            setDescription('')
-            setImageUrlsInput('')
-          }
-        } catch {}
-      }
+    const urls = parseUrls(imageUrlsInput)
+    const files = selectedFiles
+    const total = files.length + urls.length
+    if (total >= 2) {
+      try {
+        const res = await createMultiImagePost({ files, imageUrls: urls, text: description.trim(), visibility: 'PUBLIC' })
+        if (res?.success) {
+          setSelectedFiles([])
+          setDescription('')
+          setImageUrlsInput('')
+        }
+      } catch {}
+      return
+    }
+    // Fallback for single image use-case when only one source provided
+    if (mode !== 'url' && files.length === 1 && description.trim()) {
+      try {
+        const res = await createImagePost({ file: files[0], text: description.trim(), visibility: 'PUBLIC' })
+        if (res?.success) {
+          setSelectedFiles([])
+          setDescription('')
+          setImageUrlsInput('')
+        }
+      } catch {}
+      return
+    }
+    if (mode !== 'file' && urls.length === 1 && description.trim()) {
+      try {
+        const res = await createImagePost({ imageUrl: urls[0], text: description.trim(), visibility: 'PUBLIC' })
+        if (res?.success) {
+          setSelectedFiles([])
+          setDescription('')
+          setImageUrlsInput('')
+        }
+      } catch {}
     }
   }
 
@@ -115,65 +126,72 @@ export default function ImagesUploadPage() {
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Images Upload</h2>
               {/* Mode selector */}
               <div className="mb-4">
+                <Label className="mb-2 block text-sm md:text-base">Choose input mode</Label>
                 <RadioGroup
                   value={mode}
-                  onValueChange={(v) => setMode(v as 'file' | 'url')}
-                  className="flex gap-4"
+                  onValueChange={(v) => setMode(v as 'file' | 'url' | 'both')}
+                  className="flex flex-wrap gap-4"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="file" id="img-mode-file" />
-                    <Label htmlFor="img-mode-file">Upload files</Label>
+                    <RadioGroupItem id="mode-file" value="file" />
+                    <Label htmlFor="mode-file">Files</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="url" id="img-mode-url" />
-                    <Label htmlFor="img-mode-url">Submit URLs</Label>
+                    <RadioGroupItem id="mode-url" value="url" />
+                    <Label htmlFor="mode-url">URLs</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem id="mode-both" value="both" />
+                    <Label htmlFor="mode-both">Both</Label>
                   </div>
                 </RadioGroup>
               </div>
-              
-              {/* Upload Area */}
-              {mode === 'file' ? (
-              <div
-                className={`border-2 border-dashed rounded-lg p-4 md:p-6 lg:p-8 text-center transition-colors mb-3 md:mb-4 ${
-                  isDragging 
-                    ? 'border-[#0b64c1] bg-[#e7eff8]' 
-                    : 'border-gray-300 hover:border-[#0b64c1] hover:bg-gray-50'
-                }`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-              >
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileInput}
-                  className="hidden"
-                  id="images-upload"
-                />
-                <Button 
-                  onClick={triggerFileInput}
-                  className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white mb-4 md:mb-6 px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
+              {/* Upload Area - Files (shown for file or both) */}
+              {mode !== 'url' && (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-4 md:p-6 lg:p-8 text-center transition-colors mb-3 md:mb-4 ${
+                    isDragging 
+                      ? 'border-[#0b64c1] bg-[#e7eff8]' 
+                      : 'border-gray-300 hover:border-[#0b64c1] hover:bg-gray-50'
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
                 >
-                  <Upload className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                  Upload Files
-                </Button>
-                <div className="w-16 h-16 md:w-20 md:h-20 bg-[#e7eff8] rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
-                  <ImageIcon className="h-8 w-8 md:h-10 md:w-10 text-[#0b64c1]" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileInput}
+                    className="hidden"
+                    id="images-upload"
+                  />
+                  <Button 
+                    onClick={triggerFileInput}
+                    className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white mb-4 md:mb-6 px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
+                  >
+                    <Upload className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+                    Upload Files
+                  </Button>
+                  <div className="w-16 h-16 md:w-20 md:h-20 bg-[#e7eff8] rounded-full flex items-center justify-center mx-auto mb-4 md:mb-6">
+                    <ImageIcon className="h-8 w-8 md:h-10 md:w-10 text-[#0b64c1]" />
+                  </div>
+                  <div className="mb-4 md:mb-6">
+                    <p className="text-lg md:text-xl font-medium text-gray-900 mb-2">Click to upload or drag and drop</p>
+                    <p className="text-xs md:text-sm text-gray-500">JPG, PNG, GIF, or any image format</p>
+                  </div>
+                  <Button 
+                    onClick={triggerFileInput}
+                    variant="outline" 
+                    className="border-[#0b64c1] text-[#0b64c1] hover:bg-[#0b64c1] hover:text-white px-4 md:px-6 py-2 text-sm md:text-base w-full sm:w-auto"
+                  >
+                    Choose Image Files
+                  </Button>
                 </div>
-                <div className="mb-4 md:mb-6">
-                  <p className="text-lg md:text-xl font-medium text-gray-900 mb-2">Click to upload or drag and drop</p>
-                  <p className="text-xs md:text-sm text-gray-500">JPG, PNG, GIF, or any image format</p>
-                </div>
-                <Button 
-                  onClick={triggerFileInput}
-                  variant="outline" 
-                  className="border-[#0b64c1] text-[#0b64c1] hover:bg-[#0b64c1] hover:text-white px-4 md:px-6 py-2 text-sm md:text-base w-full sm:w-auto"
-                >
-                  Choose Image Files
-                </Button>
-              </div>
-              ) : (
+              )}
+
+              {/* URL Area (shown for url or both) */}
+              {mode !== 'file' && (
                 <div className="border rounded-lg p-4 md:p-6 mb-4">
                   <div className="flex items-center gap-2 mb-2 text-gray-700">
                     <LinkIcon className="h-4 w-4" />
@@ -187,12 +205,12 @@ export default function ImagesUploadPage() {
                     onChange={(e) => setImageUrlsInput(e.target.value)}
                     className="min-h-[120px] mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-2">We will use the provided URLs instead of uploading files.</p>
+                  <p className="text-xs text-muted-foreground mt-2">We will use the provided URLs {mode==='both' ? 'in addition to uploaded files' : 'instead of uploading files'}.</p>
                 </div>
               )}
 
               {/* Selected Images Preview */}
-              {mode === 'file' && selectedFiles.length > 0 && (
+              {mode !== 'url' && selectedFiles.length > 0 && (
                 <div className="space-y-3 md:space-y-4">
                   <h3 className="text-base md:text-lg font-medium text-gray-900">Selected Images ({selectedFiles.length})</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
@@ -261,17 +279,17 @@ export default function ImagesUploadPage() {
         <div className="flex justify-center mt-6 md:mt-8">
           <Button
             onClick={handleSubmit}
-              disabled={(mode === 'file' ? selectedFiles.length === 0 : parseUrls(imageUrlsInput).length === 0) || !description.trim() || isLoading}
-              className={`bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+            disabled={((selectedFiles.length + parseUrls(imageUrlsInput).length) < 1) || !description.trim() || isLoading}
+            className={`bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
           >
-              {isLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Spinner size="sm" />
-                  <span>Posting…</span>
-                </span>
-              ) : (
-                mode === 'file' ? 'Upload Images & Post' : 'Submit Image URLs & Post'
-              )}
+            {isLoading ? (
+              <span className="inline-flex items-center gap-2">
+                <Spinner size="sm" />
+                <span>Posting…</span>
+              </span>
+            ) : (
+              (selectedFiles.length + parseUrls(imageUrlsInput).length) >= 2 ? 'Post Carousel' : 'Post Single Image'
+            )}
           </Button>
         </div>
       </div>

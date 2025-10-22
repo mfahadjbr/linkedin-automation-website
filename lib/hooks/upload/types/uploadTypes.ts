@@ -12,6 +12,16 @@ export interface CreatedPost {
   post_url: string
   posted_at: string
   image_urn?: string
+  image_count?: number
+  total_size?: number
+  images?: Array<{ image_urn?: string; source?: string; size?: number; index?: number }>
+}
+
+export interface MultiImagePostResponse {
+  success: boolean
+  message: string
+  post: CreatedPost | null
+  error: string | null
 }
 
 export interface TextPostResponse {
