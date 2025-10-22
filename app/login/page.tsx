@@ -8,22 +8,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/lib/hooks"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login, isLoading } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const validEmail = "test@gmail.com"
-    const validPassword = "123123123"
-    if (email === validEmail && password === validPassword) {
-      localStorage.setItem("auth", "true")
+    setError(null)
+    try {
+      await login({ email, password })
       router.push("/dashboard")
-    } else {
-      setError("Invalid credentials. Use test@gmail.com / 123123123")
+    } catch (err: any) {
+      setError(err?.message || "Login failed. Please try again.")
     }
   }
 
@@ -54,7 +55,9 @@ export default function LoginPage() {
                       <Input id="password" type="password" placeholder="123123123" value={password} onChange={(e)=>setPassword(e.target.value)} required className="h-10 md:h-11 text-sm md:text-base" />
                     </div>
                     {error && (<p className="text-xs md:text-sm text-destructive">{error}</p>)}
-                    <Button type="submit" className="w-full h-10 md:h-11 cursor-pointer text-sm md:text-base">Sign in</Button>
+                    <Button type="submit" className="w-full h-10 md:h-11 cursor-pointer text-sm md:text-base" disabled={isLoading}>
+                      {isLoading ? "Signing in..." : "Sign in"}
+                    </Button>
                   </form>
                 </CardContent>
               </Card>

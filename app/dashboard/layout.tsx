@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Linkedin, BarChart3, FileText, Upload, User, Settings, LogOut, ChevronLeft, ChevronRight, Menu, X } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -12,6 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import AuthGuard from "@/lib/hooks/auth/AuthGuard"
+import { useAuthContext } from "@/lib/hooks/auth/AuthContext"
 
 export default function DashboardLayout({
   children,
@@ -22,19 +24,15 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const authed = typeof window !== "undefined" && localStorage.getItem("auth") === "true"
-    if (!authed) router.replace("/login")
-  }, [router])
-
-  const logout = () => {
-    localStorage.removeItem("auth")
-    router.replace("/login")
+  const { logout } = useAuthContext()
+  const handleLogout = () => {
+    const redirect = logout("/login")
+    router.replace(redirect)
   }
 
   return (
-    <div className="min-h-screen">
+  <AuthGuard>
+  <div className="min-h-screen">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="h-12 md:h-14 flex items-center justify-between px-3 md:px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
@@ -69,7 +67,7 @@ export default function DashboardLayout({
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={logout}>
+              <DropdownMenuItem variant="destructive" onSelect={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
@@ -137,6 +135,7 @@ export default function DashboardLayout({
         </div>
       </main>
     </div>
+    </AuthGuard>
   )
 }
 
