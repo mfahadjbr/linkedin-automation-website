@@ -1,3 +1,28 @@
+export interface VideoPostPayload {
+  video?: File
+  video_url?: string
+  title?: string
+  text?: string
+  visibility?: Visibility
+}
+
+export interface VideoPostResponse {
+  success: boolean
+  message: string
+  post: VideoPost | null
+  error: string | null
+}
+
+export interface VideoPost {
+  post_id: string
+  post_url: string
+  video_urn: string
+  status: string // e.g. "processing"
+  posted_at: string
+  title?: string
+  text?: string
+  visibility: Visibility
+}
 export type Visibility = 'PUBLIC' | 'CONNECTIONS' | 'PRIVATE' | string
 
 export interface TextPostPayload {
@@ -7,7 +32,7 @@ export interface TextPostPayload {
 
 export interface CreatedPost {
   post_id: string
-  text: string
+  text?: string
   visibility: Visibility
   post_url: string
   posted_at: string

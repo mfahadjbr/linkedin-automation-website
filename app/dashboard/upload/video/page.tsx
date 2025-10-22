@@ -2,220 +2,170 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, ArrowLeft, Link as LinkIcon } from "lucide-react"
+import { Upload, Link as LinkIcon, Video as VideoIcon, ArrowLeft } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import useUpload from "@/lib/hooks/upload/useUpload"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+
+const VIDEO_FORMATS = ["mp4", "mov", "avi", "wmv", "flv", "mkv", "webm", "m4v"]
+const MAX_SIZE = 5 * 1024 * 1024 * 1024 // 5GB
 
 export default function VideoUploadPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [description, setDescription] = useState("")
-  const [isDragging, setIsDragging] = useState(false)
   const [mode, setMode] = useState<'file' | 'url'>("file")
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [videoUrl, setVideoUrl] = useState("")
+  const [title, setTitle] = useState("")
+  const [description, setDescription] = useState("")
+  const [visibility, setVisibility] = useState<'PUBLIC' | 'CONNECTIONS'>("PUBLIC")
 
-  const handleFileSelect = (file: File) => {
-    if (file && file.type.startsWith('video/')) {
-      setSelectedFile(file)
-    }
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    handleFileSelect(file)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
+  const { createVideoPost, isLoading, error, successMessage, lastPost, resetUpload } = useUpload()
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      handleFileSelect(file)
+      const ext = file.name.split('.').pop()?.toLowerCase()
+      if (!ext || !VIDEO_FORMATS.includes(ext)) {
+        alert("Unsupported video format. Allowed: " + VIDEO_FORMATS.join(", "))
+        return
+      }
+      if (file.size > MAX_SIZE) {
+        alert("File too large. Max 5GB allowed.")
+        return
+      }
+      setSelectedFile(file)
     }
   }
 
-  const triggerFileInput = () => {
-    const fileInput = document.getElementById('video-upload') as HTMLInputElement
-    if (fileInput) {
-      fileInput.click()
-    }
-  }
-
-  const handleSubmit = () => {
-    if (mode === 'file') {
-      if (selectedFile && description.trim()) {
-        console.log("Uploading video (file):", selectedFile.name)
-        console.log("Description:", description)
-        alert("Video uploaded successfully!")
+  const handleSubmit = async () => {
+    if (mode === "file" && !selectedFile) return
+    if (mode === "url" && !videoUrl.trim()) return
+    try {
+      const res = await createVideoPost({
+        video: mode === "file" ? selectedFile! : undefined,
+        video_url: mode === "url" ? videoUrl.trim() : undefined,
+        title: title.trim() || undefined,
+        text: description.trim() || undefined,
+        visibility,
+      })
+      if (res?.success) {
+        setSelectedFile(null)
+        setVideoUrl("")
+        setTitle("")
+        setDescription("")
+        resetUpload()
       }
-    } else {
-      if (videoUrl.trim() && description.trim()) {
-        console.log("Uploading video (url):", videoUrl)
-        console.log("Description:", description)
-        alert("Video (via URL) submitted successfully!")
-      }
-    }
+    } catch {}
   }
 
   return (
     <div className="min-h-screen p-3 md:p-4 lg:p-6">
       <div className="mb-4 md:mb-6">
-          <Link href="/dashboard/upload" className="inline-flex items-center text-[#0b64c1] hover:text-[#0a58ad] mb-3 md:mb-4 text-sm md:text-base">
-            <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-2" />
-            Back to Upload Options
-          </Link>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Upload Your Video</h1>
-          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Upload a video file and we'll automatically generate titles, descriptions, timestamps, and thumbnails using AI</p>
-        </div>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="space-y-6 md:space-y-8">
-          {/* Video Upload Section */}
-          <Card className="bg-white border border-gray-200">
-            <CardContent className="p-4 md:p-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Video Upload</h2>
-              {/* Mode selector */}
+        <Link href="/dashboard/upload" className="inline-flex items-center text-[#0b64c1] hover:text-[#0a58ad] mb-3 md:mb-4 text-sm md:text-base">
+          <ArrowLeft className="h-3 w-3 md:h-4 md:w-4 mr-2" />
+          Back to Upload Options
+        </Link>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Upload a Video Post</h1>
+        <p className="text-gray-600 text-sm md:text-base lg:text-lg">Share a video on LinkedIn by uploading a file or providing a direct video URL.</p>
+      </div>
+      <div className="max-w-2xl mx-auto">
+        <Card className="bg-white border border-gray-200 mb-6">
+          <CardContent className="p-4 md:p-6">
+            <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Video Source</h2>
+            <div className="mb-4">
+              <Label className="mb-2 block text-sm md:text-base">Choose input mode</Label>
+              <RadioGroup value={mode} onValueChange={v => setMode(v as 'file' | 'url')} className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem id="mode-file" value="file" />
+                  <Label htmlFor="mode-file">Upload File</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem id="mode-url" value="url" />
+                  <Label htmlFor="mode-url">Video URL</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            {mode === "file" && (
               <div className="mb-4">
-                <RadioGroup
-                  value={mode}
-                  onValueChange={(v) => setMode(v as 'file' | 'url')}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="file" id="vid-mode-file" />
-                    <Label htmlFor="vid-mode-file">Upload file</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="url" id="vid-mode-url" />
-                    <Label htmlFor="vid-mode-url">Submit URL</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              {/* Upload Area */}
-              {mode === 'file' ? (
-              <div
-                className={`border-2 border-dashed rounded-lg p-4 md:p-6 lg:p-8 text-center transition-colors ${
-                  isDragging 
-                    ? 'border-[#0b64c1] bg-[#e7eff8]' 
-                    : 'border-gray-300 hover:border-[#0b64c1] hover:bg-gray-50'
-                }`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-              >
-                {selectedFile ? (
-                  <div className="space-y-3 md:space-y-4">
-                    {/* Video Preview */}
-                    <div className="relative">
-                      <video
-                        src={URL.createObjectURL(selectedFile)}
-                        controls
-                        className="w-full h-32 sm:h-40 md:h-48 bg-black rounded-lg object-contain"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-base md:text-lg font-medium text-gray-900">{selectedFile.name}</p>
-                      <p className="text-xs md:text-sm text-gray-500">{(selectedFile.size / (1024 * 1024)).toFixed(2)} MB</p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => setSelectedFile(null)}
-                      className="w-full text-red-600 border-red-300 hover:bg-red-50 text-sm md:text-base"
-                    >
-                      Remove File
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4 md:space-y-6">
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleFileInput}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                    <Button 
-                      onClick={triggerFileInput}
-                      className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
-                    >
-                      <Upload className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Upload File
-                    </Button>
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-[#e7eff8] rounded-full flex items-center justify-center mx-auto">
-                      <Upload className="h-8 w-8 md:h-10 md:w-10 text-[#0b64c1]" />
-                    </div>
-                    <div>
-                      <p className="text-lg md:text-xl font-medium text-gray-900 mb-2">Click to upload or drag and drop</p>
-                      <p className="text-xs md:text-sm text-gray-500">MP4, MOV, AVI, or any video format</p>
-                    </div>
-                    <Button 
-                      onClick={triggerFileInput}
-                      variant="outline" 
-                      className="border-[#0b64c1] text-[#0b64c1] hover:bg-[#0b64c1] hover:text-white px-4 md:px-6 py-2 text-sm md:text-base w-full sm:w-auto"
-                    >
-                      Choose Video File
-                    </Button>
-                  </div>
+                <Input type="file" accept={VIDEO_FORMATS.map(f => "."+f).join(",")} onChange={handleFileInput} />
+                {selectedFile && (
+                  <div className="mt-2 text-xs text-gray-700">Selected: {selectedFile.name} ({(selectedFile.size/(1024*1024)).toFixed(1)} MB)</div>
                 )}
               </div>
-              ) : (
-                <div className="border rounded-lg p-4 md:p-6">
-                  <div className="flex items-center gap-2 mb-2 text-gray-700">
-                    <LinkIcon className="h-4 w-4" />
-                    <span className="font-medium">Submit video URL</span>
-                  </div>
-                  <Label htmlFor="video-url" className="text-sm">Paste a direct video URL</Label>
-                  <Input
-                    id="video-url"
-                    placeholder="https://example.com/video.mp4"
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    className="mt-2"
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">We will use the provided URL instead of uploading a file.</p>
+            )}
+            {mode === "url" && (
+              <div className="mb-4">
+                <Label htmlFor="video-url" className="text-sm">Direct video URL</Label>
+                <Input id="video-url" type="url" placeholder="https://example.com/video.mp4" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} />
+              </div>
+            )}
+            <div className="mb-4">
+              <Label htmlFor="title" className="text-sm">Title (optional, max 200 chars)</Label>
+              <Input id="title" maxLength={200} value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter a title for your video" />
+            </div>
+            <div className="mb-4">
+              <Label htmlFor="description" className="text-sm">Description (optional, max 3000 chars)</Label>
+              <Textarea id="description" maxLength={3000} value={description} onChange={e => setDescription(e.target.value)} placeholder="Write a caption or description..." className="min-h-[120px]" />
+            </div>
+            <div className="mb-4">
+              <Label className="text-sm mb-2 block">Visibility</Label>
+              <RadioGroup value={visibility} onValueChange={v => setVisibility(v as 'PUBLIC' | 'CONNECTIONS')} className="flex gap-4">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem id="vis-public" value="PUBLIC" />
+                  <Label htmlFor="vis-public">Public</Label>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Description Section */}
-          <Card className="bg-white border border-gray-200">
-            <CardContent className="p-4 md:p-6">
-              <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Post Description</h2>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Write your post description here..."
-                className="min-h-[160px]"
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-center mt-6 md:mt-8">
-          <Button
-            onClick={handleSubmit}
-            disabled={(mode === 'file' ? !selectedFile : !videoUrl.trim()) || !description.trim()}
-            className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
-          >
-            {mode === 'file' ? 'Upload Video & Post' : 'Submit Video URL & Post'}
-          </Button>
-        </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem id="vis-connections" value="CONNECTIONS" />
+                  <Label htmlFor="vis-connections">Connections</Label>
+                </div>
+              </RadioGroup>
+            </div>
+            {error && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertTitle>Post failed</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            {successMessage && (
+              <Alert className="mt-4">
+                <AlertTitle>Success</AlertTitle>
+                <AlertDescription>
+                  {successMessage}
+                  {lastPost?.post_url && (
+                    <>
+                      {" "}
+                      <a href={lastPost.post_url} target="_blank" rel="noopener noreferrer" className="underline">View on LinkedIn</a>
+                    </>
+                  )}
+                  {lastPost && (lastPost as any).status && (
+                    <div className="text-xs text-gray-500 mt-2">Status: {(lastPost as any).status}</div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+            <div className="flex justify-center mt-6 md:mt-8">
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading || (mode === "file" && !selectedFile) || (mode === "url" && !videoUrl.trim())}
+                className={`bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                {isLoading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Spinner size="sm" />
+                    <span>Posting…</span>
+                  </span>
+                ) : (
+                  "Post Video"
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

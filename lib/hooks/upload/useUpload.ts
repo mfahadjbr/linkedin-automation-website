@@ -3,7 +3,7 @@
 import { useCallback, useReducer } from 'react'
 import { useAuthContext } from '@/lib/hooks/auth/AuthContext'
 import { uploadReducer, initialUploadState } from './Reducers/uploadReducer'
-import type { TextPostPayload, TextPostResponse, Visibility, MultiImagePostResponse } from './types/uploadTypes'
+import type { TextPostPayload, TextPostResponse, Visibility, MultiImagePostResponse, VideoPostPayload, VideoPostResponse } from './types/uploadTypes'
 import { DEBUG_LOGS } from '@/lib/config/appConfig'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.postsiva.com/'
@@ -11,6 +11,68 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://backend.postsi
 export default function useUpload() {
   const { fetchWithAuth } = useAuthContext()
   const [state, dispatch] = useReducer(uploadReducer, initialUploadState)
+
+  const createVideoPost = useCallback(async (payload: VideoPostPayload) => {
+    if (DEBUG_LOGS) console.log('🎬 [Upload] Starting createVideoPost', {
+      hasFile: !!payload.video,
+      hasUrl: !!payload.video_url,
+      titleLen: payload.title?.length,
+      textLen: payload.text?.length,
+      visibility: payload.visibility
+    })
+    if (!payload.video && !payload.video_url) {
+      const msg = 'Provide either a video file or a video URL'
+      if (DEBUG_LOGS) console.warn('⚠️ [Upload] ' + msg)
+      dispatch({ type: 'SET_ERROR', payload: msg })
+      return { success: false, message: msg, post: null, error: msg } as VideoPostResponse
+    }
+
+    dispatch({ type: 'SET_LOADING', payload: true })
+    dispatch({ type: 'SET_ERROR', payload: null })
+    dispatch({ type: 'SET_SUCCESS', payload: null })
+    dispatch({ type: 'SET_POST', payload: null })
+
+    try {
+      const form = new FormData()
+      if (payload.video) form.append('video', payload.video)
+      if (payload.video_url) form.append('video_url', payload.video_url)
+      if (payload.title) form.append('title', payload.title)
+      if (payload.text) form.append('text', payload.text)
+      form.append('visibility', payload.visibility || 'PUBLIC')
+
+      const url = `${API_BASE}linkedin/video-post/`
+      if (DEBUG_LOGS) console.log('🌐 [Upload] Request URL:', url)
+      const res = await fetchWithAuth(url, { method: 'POST', data: form })
+      const data = res.data as VideoPostResponse
+      if (DEBUG_LOGS) console.log('✅ [Upload] Video post response', {
+        success: data?.success,
+        message: data?.message,
+        postId: data?.post?.post_id,
+        videoUrn: data?.post?.video_urn,
+        status: data?.post?.status
+      })
+
+      if (!data?.success) {
+        const msg = data?.message || data?.error || 'Failed to create video post'
+        dispatch({ type: 'SET_ERROR', payload: msg })
+        return data
+      }
+
+      dispatch({ type: 'SET_POST', payload: data.post || null })
+      dispatch({ type: 'SET_SUCCESS', payload: data.message || 'Video post created successfully' })
+      return data
+    } catch (err: any) {
+      const message = err?.message || 'Failed to create video post'
+      if (DEBUG_LOGS) console.error('❌ [Upload] Exception during createVideoPost', { message, err })
+      dispatch({ type: 'SET_ERROR', payload: message })
+      throw err
+
+    } finally {
+      if (DEBUG_LOGS) console.log('🔚 [Upload] Finished createVideoPost')
+      dispatch({ type: 'SET_LOADING', payload: false })
+    }
+  }, [fetchWithAuth])
+
 
   const createTextPost = useCallback(async (payload: TextPostPayload) => {
     if (DEBUG_LOGS) console.log('📝 [Upload] Starting createTextPost', { visibility: payload.visibility, textLength: payload.text?.length })
@@ -163,6 +225,7 @@ export default function useUpload() {
     createTextPost,
     createImagePost,
     createMultiImagePost,
+    createVideoPost,
     resetUpload,
   }
 }
