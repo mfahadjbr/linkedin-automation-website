@@ -2,11 +2,15 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { limit = 10, offset = 0 } = req.query
-  // Use your actual cookie name for the token
-  const token = req.cookies['token']
+
+  // Accept token from Authorization header or cookies
+  let token = req.cookies['token'];
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.replace('Bearer ', '');
+  }
 
   if (!token) {
-    return res.status(401).json({ success: false, error: 'No auth token found in cookies.' })
+    return res.status(401).json({ success: false, error: 'No auth token found.' });
   }
 
   const backendUrl = `https://backend.postsiva.com/linkedin/video-post/my-posts?limit=${limit}&offset=${offset}`
