@@ -10,6 +10,27 @@ import type { LinkedInCreateTokenResponse } from './types/linkedinTypes';
 export default function useLinkedinAuth() {
   const [state, dispatch] = useReducer(linkedinReducer, initialLinkedInState);
 
+  const hasLinkedinToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      if (!token) return false;
+      const res = await api.get<LinkedInCreateTokenResponse>(
+        '/linkedin/get-token',
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (DEBUG_LOGS) console.log('🔎 LinkedIn get-token response:', res.data);
+      const accessToken = (res.data as any)?.data?.access_token;
+      return !!accessToken;
+    } catch (err) {
+      if (DEBUG_LOGS) console.warn('LinkedIn token check failed; treating as not connected.', err);
+      return false;
+    }
+  }, []);
+
   const initiateLinkedinConnect = useCallback(async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     dispatch({ type: 'SET_ERROR', payload: null });
@@ -70,6 +91,7 @@ export default function useLinkedinAuth() {
 
   return {
     ...state,
+    hasLinkedinToken,
     initiateLinkedinConnect,
   };
 }

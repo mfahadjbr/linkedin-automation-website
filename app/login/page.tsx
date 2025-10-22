@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuthContext } from "@/lib/hooks/auth/AuthContext"
+import useLinkedinAuth from "@/lib/hooks/auth/linkdin/useLinkedinAuth"
 import { useEffect } from "react"
 import { Spinner } from "@/components/ui/spinner"
 
 export default function LoginPage() {
   const router = useRouter()
   const { login, isLoading, isAuthenticated } = useAuthContext()
+  const { hasLinkedinToken } = useLinkedinAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -23,18 +25,22 @@ export default function LoginPage() {
   // If already authenticated, redirect away from /login
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/dashboard')
+      ;(async () => {
+        const hasToken = await hasLinkedinToken()
+        router.replace(hasToken ? '/dashboard' : '/dashboard/integrations/linkedin')
+      })()
     }
-  }, [isLoading, isAuthenticated, router])
+  }, [isLoading, isAuthenticated, router, hasLinkedinToken])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     try {
       setSubmitting(true)
-      await login({ email, password })
-      // Replace to avoid going back to login
-      router.replace("/dashboard")
+  await login({ email, password })
+  const hasToken = await hasLinkedinToken()
+  // Replace to avoid going back to login
+  router.replace(hasToken ? "/dashboard" : "/dashboard/integrations/linkedin")
     } catch (err: any) {
       setError(err?.message || "Login failed. Please try again.")
     } finally {
