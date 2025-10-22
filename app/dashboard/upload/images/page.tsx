@@ -2,15 +2,20 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, ArrowLeft, X, Image as ImageIcon } from "lucide-react"
+import { Upload, ArrowLeft, X, Image as ImageIcon, Link as LinkIcon, List } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export default function ImagesUploadPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [description, setDescription] = useState("")
   const [isDragging, setIsDragging] = useState(false)
+  const [mode, setMode] = useState<'file' | 'url'>("file")
+  const [imageUrlsInput, setImageUrlsInput] = useState("")
 
   const handleFileSelect = (files: FileList) => {
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
@@ -51,12 +56,25 @@ export default function ImagesUploadPage() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const parseUrls = (raw: string) => raw
+    .split(/\n|,|\s+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+
   const handleSubmit = () => {
-    if (selectedFiles.length > 0 && description.trim()) {
-      // Handle upload logic here
-      console.log("Uploading images:", selectedFiles.map(f => f.name))
-      console.log("Description:", description)
-      alert("Images uploaded successfully!")
+    if (mode === 'file') {
+      if (selectedFiles.length > 0 && description.trim()) {
+        console.log("Uploading images (files):", selectedFiles.map(f => f.name))
+        console.log("Description:", description)
+        alert("Images uploaded successfully!")
+      }
+    } else {
+      const urls = parseUrls(imageUrlsInput)
+      if (urls.length > 0 && description.trim()) {
+        console.log("Uploading images (urls):", urls)
+        console.log("Description:", description)
+        alert("Images (via URL) submitted successfully!")
+      }
     }
   }
 
@@ -68,7 +86,7 @@ export default function ImagesUploadPage() {
             Back to Upload Options
           </Link>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Upload Your Images</h1>
-          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Upload multiple images and write a description</p>
+          <p className="text-gray-600 text-sm md:text-base lg:text-lg">Upload multiple images or submit image URLs, and write a description</p>
         </div>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -79,8 +97,26 @@ export default function ImagesUploadPage() {
           <Card className="bg-white border border-gray-200">
             <CardContent className="p-4 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Images Upload</h2>
+              {/* Mode selector */}
+              <div className="mb-4">
+                <RadioGroup
+                  value={mode}
+                  onValueChange={(v) => setMode(v as 'file' | 'url')}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="file" id="img-mode-file" />
+                    <Label htmlFor="img-mode-file">Upload files</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="url" id="img-mode-url" />
+                    <Label htmlFor="img-mode-url">Submit URLs</Label>
+                  </div>
+                </RadioGroup>
+              </div>
               
               {/* Upload Area */}
+              {mode === 'file' ? (
               <div
                 className={`border-2 border-dashed rounded-lg p-4 md:p-6 lg:p-8 text-center transition-colors mb-3 md:mb-4 ${
                   isDragging 
@@ -121,9 +157,26 @@ export default function ImagesUploadPage() {
                   Choose Image Files
                 </Button>
               </div>
+              ) : (
+                <div className="border rounded-lg p-4 md:p-6 mb-4">
+                  <div className="flex items-center gap-2 mb-2 text-gray-700">
+                    <LinkIcon className="h-4 w-4" />
+                    <span className="font-medium">Submit image URLs</span>
+                  </div>
+                  <Label htmlFor="image-urls" className="text-sm">Enter one or more URLs (comma or newline separated)</Label>
+                  <Textarea
+                    id="image-urls"
+                    placeholder="https://example.com/image1.jpg\nhttps://example.com/image2.png"
+                    value={imageUrlsInput}
+                    onChange={(e) => setImageUrlsInput(e.target.value)}
+                    className="min-h-[120px] mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">We will use the provided URLs instead of uploading files.</p>
+                </div>
+              )}
 
               {/* Selected Images Preview */}
-              {selectedFiles.length > 0 && (
+              {mode === 'file' && selectedFiles.length > 0 && (
                 <div className="space-y-3 md:space-y-4">
                   <h3 className="text-base md:text-lg font-medium text-gray-900">Selected Images ({selectedFiles.length})</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
@@ -172,10 +225,10 @@ export default function ImagesUploadPage() {
         <div className="flex justify-center mt-6 md:mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={selectedFiles.length === 0 || !description.trim()}
+            disabled={(mode === 'file' ? selectedFiles.length === 0 : parseUrls(imageUrlsInput).length === 0) || !description.trim()}
             className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
           >
-            Upload Images & Post
+            {mode === 'file' ? 'Upload Images & Post' : 'Submit Image URLs & Post'}
           </Button>
         </div>
       </div>

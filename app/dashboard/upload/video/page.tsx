@@ -2,15 +2,20 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Upload, ArrowLeft } from "lucide-react"
+import { Upload, ArrowLeft, Link as LinkIcon } from "lucide-react"
 import { useState } from "react"
 import Link from "next/link"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 export default function VideoUploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [description, setDescription] = useState("")
   const [isDragging, setIsDragging] = useState(false)
+  const [mode, setMode] = useState<'file' | 'url'>("file")
+  const [videoUrl, setVideoUrl] = useState("")
 
   const handleFileSelect = (file: File) => {
     if (file && file.type.startsWith('video/')) {
@@ -50,11 +55,18 @@ export default function VideoUploadPage() {
   }
 
   const handleSubmit = () => {
-    if (selectedFile && description.trim()) {
-      // Handle upload logic here
-      console.log("Uploading video:", selectedFile.name)
-      console.log("Description:", description)
-      alert("Video uploaded successfully!")
+    if (mode === 'file') {
+      if (selectedFile && description.trim()) {
+        console.log("Uploading video (file):", selectedFile.name)
+        console.log("Description:", description)
+        alert("Video uploaded successfully!")
+      }
+    } else {
+      if (videoUrl.trim() && description.trim()) {
+        console.log("Uploading video (url):", videoUrl)
+        console.log("Description:", description)
+        alert("Video (via URL) submitted successfully!")
+      }
     }
   }
 
@@ -75,8 +87,26 @@ export default function VideoUploadPage() {
           <Card className="bg-white border border-gray-200">
             <CardContent className="p-4 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold text-gray-900 mb-3 md:mb-4">Video Upload</h2>
+              {/* Mode selector */}
+              <div className="mb-4">
+                <RadioGroup
+                  value={mode}
+                  onValueChange={(v) => setMode(v as 'file' | 'url')}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="file" id="vid-mode-file" />
+                    <Label htmlFor="vid-mode-file">Upload file</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="url" id="vid-mode-url" />
+                    <Label htmlFor="vid-mode-url">Submit URL</Label>
+                  </div>
+                </RadioGroup>
+              </div>
               
               {/* Upload Area */}
+              {mode === 'file' ? (
               <div
                 className={`border-2 border-dashed rounded-lg p-4 md:p-6 lg:p-8 text-center transition-colors ${
                   isDragging 
@@ -142,6 +172,23 @@ export default function VideoUploadPage() {
                   </div>
                 )}
               </div>
+              ) : (
+                <div className="border rounded-lg p-4 md:p-6">
+                  <div className="flex items-center gap-2 mb-2 text-gray-700">
+                    <LinkIcon className="h-4 w-4" />
+                    <span className="font-medium">Submit video URL</span>
+                  </div>
+                  <Label htmlFor="video-url" className="text-sm">Paste a direct video URL</Label>
+                  <Input
+                    id="video-url"
+                    placeholder="https://example.com/video.mp4"
+                    value={videoUrl}
+                    onChange={(e) => setVideoUrl(e.target.value)}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">We will use the provided URL instead of uploading a file.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -163,10 +210,10 @@ export default function VideoUploadPage() {
         <div className="flex justify-center mt-6 md:mt-8">
           <Button
             onClick={handleSubmit}
-            disabled={!selectedFile || !description.trim()}
+            disabled={(mode === 'file' ? !selectedFile : !videoUrl.trim()) || !description.trim()}
             className="bg-[#0b64c1] hover:bg-[#0a58ad] text-white px-6 md:px-8 py-2 md:py-3 text-sm md:text-base lg:text-lg w-full sm:w-auto"
           >
-            Upload Video & Post
+            {mode === 'file' ? 'Upload Video & Post' : 'Submit Video URL & Post'}
           </Button>
         </div>
       </div>
