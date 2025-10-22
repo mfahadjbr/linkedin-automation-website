@@ -35,8 +35,8 @@ export default function ConnectLinkedInPage() {
 
   return (
     <AuthGuard>
-      <div className="max-w-2xl mx-auto py-6 md:py-8">
-        <div className="rounded-2xl border bg-card p-5 md:p-6 shadow-sm">
+      <div className="min-h-screen w-full flex items-center justify-center px-4">
+        <div className="w-full max-w-2xl rounded-2xl border bg-card p-5 md:p-6 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl md:text-3xl font-semibold">Connect LinkedIn</h1>
             <Button variant="outline" size="sm" onClick={handleLogout} className="cursor-pointer">
