@@ -19,10 +19,20 @@ function MediaPostsTab() {
 
   return (
     <div>
-      <TabsList className="mb-4">
-        <TabsTrigger value="image" onClick={() => setTab('image')}>Image Posts</TabsTrigger>
-        <TabsTrigger value="multi-image" onClick={() => setTab('multi-image')}>Multi-Image Posts</TabsTrigger>
-      </TabsList>
+      <div className="flex gap-2 mb-4">
+        <Button
+          variant={tab === 'image' ? 'default' : 'outline'}
+          onClick={() => setTab('image')}
+        >
+          Image Posts
+        </Button>
+        <Button
+          variant={tab === 'multi-image' ? 'default' : 'outline'}
+          onClick={() => setTab('multi-image')}
+        >
+          Multi-Image Posts
+        </Button>
+      </div>
       {isLoading ? <Spinner /> : error ? <div className="text-red-500">{error}</div> : (
         <div>
           {posts.length === 0 ? <div className="text-gray-500">No posts found.</div> : (
