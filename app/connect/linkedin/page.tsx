@@ -7,10 +7,20 @@ import { Spinner } from "@/components/ui/spinner"
 import useLinkedinAuth from "@/lib/hooks/auth/linkdin/useLinkedinAuth"
 import Link from "next/link"
 import AuthGuard from "@/lib/hooks/auth/AuthGuard"
+import { useAuthContext } from "@/lib/hooks/auth/AuthContext"
+import { useRouter } from "next/navigation"
+import { LogOut } from "lucide-react"
 
 export default function ConnectLinkedInPage() {
   const { initiateLinkedinConnect, isLoading, error, success, authUrl } = useLinkedinAuth()
   const [clicked, setClicked] = useState(false)
+  const { logout } = useAuthContext()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    const redirect = logout('/login')
+    router.replace(redirect)
+  }
 
   const onConnect = async () => {
     setClicked(true)
@@ -27,7 +37,12 @@ export default function ConnectLinkedInPage() {
     <AuthGuard>
       <div className="max-w-2xl mx-auto py-6 md:py-8">
         <div className="rounded-2xl border bg-card p-5 md:p-6 shadow-sm">
-          <h1 className="text-2xl md:text-3xl font-semibold">Connect LinkedIn</h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-2xl md:text-3xl font-semibold">Connect LinkedIn</h1>
+            <Button variant="outline" size="sm" onClick={handleLogout} className="cursor-pointer">
+              <LogOut className="h-4 w-4 mr-2" /> Logout
+            </Button>
+          </div>
           <p className="text-muted-foreground mt-1">Authorize this app to access your LinkedIn account for posting and analytics.</p>
 
           <div className="mt-6 flex items-center gap-3">
