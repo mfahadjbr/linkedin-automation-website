@@ -47,25 +47,33 @@ function MediaPostsTab() {
                         <a href={post.post_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View on LinkedIn</a>
                         <div className="text-xs text-gray-400 mt-1">Status: {post.status}</div>
                       </div>
-                      {tab === 'image' && post.image_urn && (
-                        <img
-                          src={`https://media.licdn.com/dms/image/${post.image_urn.split(':').pop()?.toLowerCase()}/original`}
-                          alt={post.image_filename || 'Image'}
-                          className="w-32 h-32 object-cover rounded"
-                          loading="lazy"
-                        />
-                      )}
+                      {tab === 'image' && post.image_urn && (() => {
+                        const imgUrl = `https://media.licdn.com/dms/image/${post.image_urn.split(':').pop()?.toLowerCase()}/original`;
+                        console.log('Image Post URL:', imgUrl, post);
+                        return (
+                          <img
+                            src={imgUrl}
+                            alt={post.image_filename || 'Image'}
+                            className="w-32 h-32 object-cover rounded"
+                            loading="lazy"
+                          />
+                        );
+                      })()}
                       {tab === 'multi-image' && post.images && (
                         <div className="flex gap-2 flex-wrap mt-2 md:mt-0">
-                          {post.images.map((img: any, idx: number) => (
-                            <img
-                              key={idx}
-                              src={`https://media.licdn.com/dms/image/${img.asset_urn.split(':').pop()?.toLowerCase()}/original`}
-                              alt={img.filename}
-                              className="w-20 h-20 object-cover rounded"
-                              loading="lazy"
-                            />
-                          ))}
+                          {post.images.map((img: any, idx: number) => {
+                            const imgUrl = `https://media.licdn.com/dms/image/${img.asset_urn.split(':').pop()?.toLowerCase()}/original`;
+                            console.log('Multi-Image Post URL:', imgUrl, img);
+                            return (
+                              <img
+                                key={idx}
+                                src={imgUrl}
+                                alt={img.filename}
+                                className="w-20 h-20 object-cover rounded"
+                                loading="lazy"
+                              />
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -166,17 +174,21 @@ function VideoPostsTab() {
                         <div className="text-xs text-gray-400 mt-1">Status: {post.status}</div>
                         {post.text && <div className="text-sm text-gray-700 mt-2">{post.text}</div>}
                       </div>
-                      {post.video_urn && (
-                        <video
-                          controls
-                          className="w-48 h-32 rounded bg-black mt-4 md:mt-0"
-                          poster="/placeholder.jpg"
-                          preload="none"
-                        >
-                          <source src={`https://media.licdn.com/dms/video/${post.video_urn.split(':').pop()?.toLowerCase()}/original`} />
-                          Your browser does not support the video tag.
-                        </video>
-                      )}
+                      {post.video_urn && (() => {
+                        const videoUrl = `https://media.licdn.com/dms/video/${post.video_urn.split(':').pop()?.toLowerCase()}/original`;
+                        console.log('Video Post URL:', videoUrl, post);
+                        return (
+                          <video
+                            controls
+                            className="w-48 h-32 rounded bg-black mt-4 md:mt-0"
+                            poster="/placeholder.jpg"
+                            preload="none"
+                          >
+                            <source src={videoUrl} />
+                            Your browser does not support the video tag.
+                          </video>
+                        );
+                      })()}
                     </div>
                   </CardContent>
                 </Card>
