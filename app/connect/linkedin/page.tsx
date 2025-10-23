@@ -78,10 +78,12 @@ export default function ConnectLinkedInPage() {
     if (!success || !clicked) return
 
     let timeoutId: NodeJS.Timeout
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.data && event.data.type === 'LINKEDIN_CONNECT' && event.data.status === 'success') {
         setCheckingToken(false)
-        setConnected(true)
+        // Re-check for token to ensure state is up to date
+        const hasToken = await hasLinkedinToken()
+        setConnected(!!hasToken)
       }
       if (event.data && event.data.type === 'LINKEDIN_CONNECT' && event.data.status === 'error') {
         setCheckingToken(false)
