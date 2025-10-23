@@ -22,15 +22,15 @@ export default function LinkedInCallbackPage() {
         if (error) {
           setStatus('error')
           setMessage(errorDescription || 'LinkedIn authentication failed')
-          
-          // Close popup or redirect to connect page
+          // Notify parent and close after 2s
           setTimeout(() => {
             if (window.opener && !window.opener.closed) {
-              window.close()
+              window.opener.postMessage({ type: 'LINKEDIN_CONNECT', status: 'error' }, '*')
+              setTimeout(() => window.close(), 2000)
             } else {
-              router.replace('/connect/linkedin')
+              setTimeout(() => router.replace('/connect/linkedin'), 2000)
             }
-          }, 2000)
+          }, 0)
           return
         }
 
@@ -39,32 +39,28 @@ export default function LinkedInCallbackPage() {
         const state = searchParams.get('state')
         
         if (code) {
-          // Backend should have already processed this
-          // First show success message
           setStatus('success')
           setMessage('LinkedIn connected successfully! Redirecting...')
-          
-          // Wait longer to show success screen before closing/redirecting
+          // Notify parent and close after 2s
           setTimeout(() => {
             if (window.opener && !window.opener.closed) {
-              window.close()
+              window.opener.postMessage({ type: 'LINKEDIN_CONNECT', status: 'success' }, '*')
+              setTimeout(() => window.close(), 2000)
             } else {
-              window.location.href = '/dashboard'
+              setTimeout(() => { window.location.href = '/dashboard' }, 2000)
             }
-          }, 2500)
+          }, 0)
         } else {
-          // No code or error, assume success and close/redirect
           setStatus('success')
           setMessage('LinkedIn connected successfully! Redirecting...')
-          
-          // Wait longer to show success screen
           setTimeout(() => {
             if (window.opener && !window.opener.closed) {
-              window.close()
+              window.opener.postMessage({ type: 'LINKEDIN_CONNECT', status: 'success' }, '*')
+              setTimeout(() => window.close(), 2000)
             } else {
-              window.location.href = '/dashboard'
+              setTimeout(() => { window.location.href = '/dashboard' }, 2000)
             }
-          }, 2500)
+          }, 0)
         }
       } catch (err) {
         console.error('Callback error:', err)
@@ -73,11 +69,12 @@ export default function LinkedInCallbackPage() {
         
         setTimeout(() => {
           if (window.opener && !window.opener.closed) {
-            window.close()
+            window.opener.postMessage({ type: 'LINKEDIN_CONNECT', status: 'error' }, '*')
+            setTimeout(() => window.close(), 2000)
           } else {
-            router.replace('/connect/linkedin')
+            setTimeout(() => router.replace('/connect/linkedin'), 2000)
           }
-        }, 3000)
+        }, 0)
       }
     }
 

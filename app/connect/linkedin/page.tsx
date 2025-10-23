@@ -55,63 +55,30 @@ export default function ConnectLinkedInPage() {
     }
   }
 
-  // Poll for LinkedIn token when popup might be open
+  // Listen for popup message and redirect immediately
   useEffect(() => {
     if (!success || !clicked) return
 
-    let intervalId: NodeJS.Timeout
     let timeoutId: NodeJS.Timeout
-    let isChecking = false
-    let tokenDetectedAt: number | null = null
-    let popupClosedCheckId: NodeJS.Timeout | null = null
-
-    const checkToken = async () => {
-      if (isChecking) return
-      isChecking = true
-      try {
-        const hasToken = await hasLinkedinToken()
-        if (hasToken) {
-          if (!tokenDetectedAt) tokenDetectedAt = Date.now()
-          setCheckingToken(true)
-          clearInterval(intervalId)
-          clearTimeout(timeoutId)
-          // Wait for popup to close before redirecting
-          const waitForPopupClose = () => {
-            if (!popupRef.current || popupRef.current.closed) {
-              setTimeout(() => {
-                router.push('/dashboard')
-              }, 500) // short delay for smoothness
-            } else {
-              popupClosedCheckId = setTimeout(waitForPopupClose, 300)
-            }
-          }
-          waitForPopupClose()
-        }
-      } catch (err) {
-        console.error('Error checking LinkedIn token:', err)
-      } finally {
-        isChecking = false
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'LINKEDIN_CONNECT') {
+        setCheckingToken(true)
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 2000)
       }
     }
-
-    // Check immediately
-    checkToken()
-
-    // Then check every 2 seconds
-    intervalId = setInterval(checkToken, 2000)
-
-    // Stop checking after 5 minutes (user might have abandoned the flow)
+    window.addEventListener('message', handleMessage)
+    // Fallback: if no message after 5 minutes, reset
     timeoutId = setTimeout(() => {
-      clearInterval(intervalId)
       setClicked(false)
+      window.removeEventListener('message', handleMessage)
     }, 300000)
-
     return () => {
-      clearInterval(intervalId)
+      window.removeEventListener('message', handleMessage)
       clearTimeout(timeoutId)
-      if (popupClosedCheckId) clearTimeout(popupClosedCheckId)
     }
-  }, [success, clicked, hasLinkedinToken, router])
+  }, [success, clicked, router])
 
   const handleLogout = () => {
     const redirect = logout('/login')
