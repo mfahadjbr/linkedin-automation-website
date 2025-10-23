@@ -18,6 +18,7 @@ export default function ConnectLinkedInPage() {
   const { logout } = useAuthContext()
   const router = useRouter()
   const [checkingToken, setCheckingToken] = useState(false)
+  const [connected, setConnected] = useState(false)
 
   // Store popup reference
   const popupRef = useRef<Window | null>(null)
@@ -61,24 +62,28 @@ export default function ConnectLinkedInPage() {
 
     let timeoutId: NodeJS.Timeout
     const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'LINKEDIN_CONNECT') {
-        setCheckingToken(true)
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 2000)
+      if (event.data && event.data.type === 'LINKEDIN_CONNECT' && event.data.status === 'success') {
+        setCheckingToken(false)
+        setConnected(true)
+      }
+      if (event.data && event.data.type === 'LINKEDIN_CONNECT' && event.data.status === 'error') {
+        setCheckingToken(false)
+        setConnected(false)
+        setClicked(false)
       }
     }
     window.addEventListener('message', handleMessage)
     // Fallback: if no message after 5 minutes, reset
     timeoutId = setTimeout(() => {
       setClicked(false)
+      setConnected(false)
       window.removeEventListener('message', handleMessage)
     }, 300000)
     return () => {
       window.removeEventListener('message', handleMessage)
       clearTimeout(timeoutId)
     }
-  }, [success, clicked, router])
+  }, [success, clicked])
 
   const handleLogout = () => {
     const redirect = logout('/login')
@@ -97,57 +102,79 @@ export default function ConnectLinkedInPage() {
           </div>
           <p className="text-muted-foreground mt-1">Authorize this app to access your LinkedIn account for posting and analytics.</p>
 
-          <div className="mt-6 flex items-center gap-3">
-            <Button
-              onClick={onConnect}
-              disabled={isLoading || checkingToken}
-              className={`h-10 md:h-11 ${(isLoading || checkingToken) ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              {isLoading ? (
-                <span className="inline-flex items-center gap-2">
-                  <Spinner size="sm" />
-                  <span>Opening LinkedIn…</span>
-                </span>
-              ) : checkingToken ? (
-                <span className="inline-flex items-center gap-2">
-                  <Spinner size="sm" />
-                  <span>Completing connection…</span>
-                </span>
-              ) : (
-                "Connect with LinkedIn"
+          {!connected && (
+            <>
+              <div className="mt-6 flex items-center gap-3">
+                <Button
+                  onClick={onConnect}
+                  disabled={isLoading || checkingToken}
+                  className={`h-10 md:h-11 ${(isLoading || checkingToken) ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                  {isLoading ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Spinner size="sm" />
+                      <span>Opening LinkedIn…</span>
+                    </span>
+                  ) : checkingToken ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Spinner size="sm" />
+                      <span>Completing connection…</span>
+                    </span>
+                  ) : (
+                    "Connect with LinkedIn"
+                  )}
+                </Button>
+                {success && authUrl && (
+                  <Link href={authUrl} className="text-sm underline" target="_blank" rel="noopener noreferrer">
+                    Popup blocked? Continue here
+                  </Link>
+                )}
+              </div>
+
+              {error && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertTitle>Connection failed</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
               )}
-            </Button>
-            {success && authUrl && (
-              <Link href={authUrl} className="text-sm underline" target="_blank" rel="noopener noreferrer">
-                Popup blocked? Continue here
-              </Link>
-            )}
-          </div>
 
-          {error && (
-            <Alert variant="destructive" className="mt-4">
-              <AlertTitle>Connection failed</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
+              {success && !checkingToken && (
+                <Alert className="mt-4">
+                  <AlertTitle>Check the LinkedIn window</AlertTitle>
+                  <AlertDescription>
+                    We opened a secure LinkedIn window for you to authorize this app. If nothing happened, your browser may
+                    have blocked popups — use the link above to continue.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {checkingToken && (
+                <Alert className="mt-4 border-green-200 bg-green-50">
+                  <AlertTitle className="text-green-900">Almost there!</AlertTitle>
+                  <AlertDescription className="text-green-800">
+                    Completing your LinkedIn connection...
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
           )}
 
-          {success && !checkingToken && (
-            <Alert className="mt-4">
-              <AlertTitle>Check the LinkedIn window</AlertTitle>
-              <AlertDescription>
-                We opened a secure LinkedIn window for you to authorize this app. If nothing happened, your browser may
-                have blocked popups — use the link above to continue.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {checkingToken && (
-            <Alert className="mt-4 border-green-200 bg-green-50">
-              <AlertTitle className="text-green-900">Almost there!</AlertTitle>
-              <AlertDescription className="text-green-800">
-                Completing your LinkedIn connection...
-              </AlertDescription>
-            </Alert>
+          {connected && (
+            <div className="mt-8 flex flex-col items-center justify-center">
+              <Alert className="mb-6 border-green-200 bg-green-50 max-w-md">
+                <AlertTitle className="text-green-900">LinkedIn Connected!</AlertTitle>
+                <AlertDescription className="text-green-800">
+                  Your LinkedIn account is now connected.<br />
+                  You can now access your dashboard and start using all features.
+                </AlertDescription>
+              </Alert>
+              <Button
+                className="h-11 w-full max-w-xs text-base font-semibold bg-[#004d9a] hover:bg-[#0a58ad] text-white"
+                onClick={() => router.push('/dashboard')}
+              >
+                Go to Dashboard
+              </Button>
+            </div>
           )}
 
           <div className="mt-6 text-xs text-muted-foreground">
