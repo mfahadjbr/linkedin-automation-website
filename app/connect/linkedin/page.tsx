@@ -20,9 +20,12 @@ export default function ConnectLinkedInPage() {
   const [checkingToken, setCheckingToken] = useState(false)
   const [connected, setConnected] = useState(false)
   const [checkingInitialToken, setCheckingInitialToken] = useState(true)
-  // On mount, check if LinkedIn token is present
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
+  // On mount, show spinner for 5s and check LinkedIn token in background
   useEffect(() => {
     let ignore = false
+    setCheckingInitialToken(true)
+    setInitialLoadDone(false)
     const check = async () => {
       try {
         const hasToken = await hasLinkedinToken()
@@ -30,11 +33,17 @@ export default function ConnectLinkedInPage() {
           setConnected(!!hasToken)
         }
       } finally {
-        if (!ignore) setCheckingInitialToken(false)
+        // Do not set checkingInitialToken false here
       }
     }
     check()
-    return () => { ignore = true }
+    const timer = setTimeout(() => {
+      if (!ignore) {
+        setCheckingInitialToken(false)
+        setInitialLoadDone(true)
+      }
+    }, 5000)
+    return () => { ignore = true; clearTimeout(timer) }
   }, [hasLinkedinToken])
 
   // Store popup reference
@@ -125,7 +134,7 @@ export default function ConnectLinkedInPage() {
             <div className="mt-8 flex flex-col items-center justify-center">
               <Spinner size="lg" />
             </div>
-          ) : connected ? (
+          ) : initialLoadDone && connected ? (
             <div className="mt-8 flex flex-col items-center justify-center">
               <Alert className="mb-6 border-green-200 bg-green-50 max-w-md">
                 <AlertTitle className="text-green-900">LinkedIn Connected!</AlertTitle>
