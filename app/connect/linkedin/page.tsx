@@ -19,6 +19,23 @@ export default function ConnectLinkedInPage() {
   const router = useRouter()
   const [checkingToken, setCheckingToken] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [checkingInitialToken, setCheckingInitialToken] = useState(true)
+  // On mount, check if LinkedIn token is present
+  useEffect(() => {
+    let ignore = false
+    const check = async () => {
+      try {
+        const hasToken = await hasLinkedinToken()
+        if (!ignore) {
+          setConnected(!!hasToken)
+        }
+      } finally {
+        if (!ignore) setCheckingInitialToken(false)
+      }
+    }
+    check()
+    return () => { ignore = true }
+  }, [hasLinkedinToken])
 
   // Store popup reference
   const popupRef = useRef<Window | null>(null)
@@ -102,7 +119,28 @@ export default function ConnectLinkedInPage() {
           </div>
           <p className="text-muted-foreground mt-1">Authorize this app to access your LinkedIn account for posting and analytics.</p>
 
-          {!connected && (
+          {checkingInitialToken ? (
+            <div className="mt-8 flex flex-col items-center justify-center">
+              <Spinner size="lg" className="mb-4" />
+              <div className="text-gray-700 text-base">Checking LinkedIn connection…</div>
+            </div>
+          ) : connected ? (
+            <div className="mt-8 flex flex-col items-center justify-center">
+              <Alert className="mb-6 border-green-200 bg-green-50 max-w-md">
+                <AlertTitle className="text-green-900">LinkedIn Connected!</AlertTitle>
+                <AlertDescription className="text-green-800">
+                  Your LinkedIn account is now connected.<br />
+                  You can now access your dashboard and start using all features.
+                </AlertDescription>
+              </Alert>
+              <Button
+                className="h-11 w-full max-w-xs text-base font-semibold bg-[#004d9a] hover:bg-[#0a58ad] text-white"
+                onClick={() => router.push('/dashboard')}
+              >
+                Go to Dashboard
+              </Button>
+            </div>
+          ) : (
             <>
               <div className="mt-6 flex items-center gap-3">
                 <Button
@@ -157,24 +195,6 @@ export default function ConnectLinkedInPage() {
                 </Alert>
               )}
             </>
-          )}
-
-          {connected && (
-            <div className="mt-8 flex flex-col items-center justify-center">
-              <Alert className="mb-6 border-green-200 bg-green-50 max-w-md">
-                <AlertTitle className="text-green-900">LinkedIn Connected!</AlertTitle>
-                <AlertDescription className="text-green-800">
-                  Your LinkedIn account is now connected.<br />
-                  You can now access your dashboard and start using all features.
-                </AlertDescription>
-              </Alert>
-              <Button
-                className="h-11 w-full max-w-xs text-base font-semibold bg-[#004d9a] hover:bg-[#0a58ad] text-white"
-                onClick={() => router.push('/dashboard')}
-              >
-                Go to Dashboard
-              </Button>
-            </div>
           )}
 
           <div className="mt-6 text-xs text-muted-foreground">
