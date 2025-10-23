@@ -143,10 +143,10 @@ function VideoPostsTab() {
       setIsLoading(true)
       setError(null)
       try {
-        const token = localStorage.getItem('token')
+        const token = localStorage.getItem('auth_token')
         
         if (!token) {
-          throw new Error('No authentication token found')
+          throw new Error('No authentication token found. Please log in.')
         }
 
         const res = await fetch(`/api/proxy/video-posts?limit=${pageSize}&offset=${(page-1)*pageSize}`, {

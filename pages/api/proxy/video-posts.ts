@@ -4,7 +4,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { limit = 10, offset = 0 } = req.query
 
   // Accept token from Authorization header or cookies
-  let token = req.cookies['token'];
+  let token = req.cookies['auth_token'];
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.replace('Bearer ', '');
   }

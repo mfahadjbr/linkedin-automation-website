@@ -56,7 +56,7 @@ export default function SettingsPage() {
   const handleDisconnectLinkedIn = async () => {
     setIsDisconnecting(true)
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('auth_token')
       
       if (!token) {
         throw new Error('No authentication token found')
@@ -75,8 +75,8 @@ export default function SettingsPage() {
       }
 
       // Clear all auth data
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('user_data')
       
       // Redirect to login
       router.push('/login')
