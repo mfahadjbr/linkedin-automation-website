@@ -36,10 +36,10 @@ export default function ConnectLinkedInPage() {
           setCheckingToken(true)
           clearInterval(intervalId)
           clearTimeout(timeoutId)
-          // Give a brief moment to show success, then redirect
+          // Show "Completing connection" message for a moment, then redirect
           setTimeout(() => {
             router.push('/dashboard')
-          }, 500)
+          }, 1500)
         }
       } catch (err) {
         console.error('Error checking LinkedIn token:', err)

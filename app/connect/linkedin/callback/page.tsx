@@ -40,29 +40,31 @@ export default function LinkedInCallbackPage() {
         
         if (code) {
           // Backend should have already processed this
+          // First show success message
           setStatus('success')
           setMessage('LinkedIn connected successfully! Redirecting...')
           
-          // Close popup window if opened in popup, otherwise redirect to dashboard
+          // Wait longer to show success screen before closing/redirecting
           setTimeout(() => {
             if (window.opener && !window.opener.closed) {
               window.close()
             } else {
               window.location.href = '/dashboard'
             }
-          }, 1500)
+          }, 2500)
         } else {
           // No code or error, assume success and close/redirect
           setStatus('success')
           setMessage('LinkedIn connected successfully! Redirecting...')
           
+          // Wait longer to show success screen
           setTimeout(() => {
             if (window.opener && !window.opener.closed) {
               window.close()
             } else {
               window.location.href = '/dashboard'
             }
-          }, 1500)
+          }, 2500)
         }
       } catch (err) {
         console.error('Callback error:', err)
