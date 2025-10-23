@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Spinner } from "@/components/ui/spinner"
@@ -18,6 +19,42 @@ export default function ConnectLinkedInPage() {
   const router = useRouter()
   const [checkingToken, setCheckingToken] = useState(false)
 
+  // Store popup reference
+  const popupRef = useRef<Window | null>(null)
+
+  // Patch initiateLinkedinConnect to store popup
+  const onConnect = async () => {
+    setClicked(true)
+    try {
+      // Patch: get authUrl and open popup manually
+      const token = localStorage.getItem('auth_token')
+      if (!token) throw new Error('You must be logged in to connect LinkedIn')
+      const res = await fetch('https://backend.postsiva.com/linkedin/create-token', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!data.success || !data.data?.auth_url) throw new Error(data.message || 'Failed to get LinkedIn auth URL')
+      const authUrl = data.data.auth_url
+      const popupWidth = 640
+      const popupHeight = 780
+      const left = Math.max(0, (window.screenX || window.screenLeft || 0) + (window.outerWidth - popupWidth) / 2)
+      const top = Math.max(0, (window.screenY || window.screenTop || 0) + (window.outerHeight - popupHeight) / 2)
+      const features = `popup=yes,toolbar=no,menubar=no,location=yes,status=no,scrollbars=yes,resizable=yes,width=${popupWidth},height=${popupHeight},left=${left},top=${top}`
+      const popup = window.open(authUrl, 'linkedin_oauth_popup', features)
+      popupRef.current = popup
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = authUrl
+      } else {
+        try { popup.focus() } catch {}
+      }
+    } catch {
+      // error is already set by the hook
+    } finally {
+      // keep clicked true to preserve UI until user acts
+    }
+  }
+
   // Poll for LinkedIn token when popup might be open
   useEffect(() => {
     if (!success || !clicked) return
@@ -26,6 +63,7 @@ export default function ConnectLinkedInPage() {
     let timeoutId: NodeJS.Timeout
     let isChecking = false
     let tokenDetectedAt: number | null = null
+    let popupClosedCheckId: NodeJS.Timeout | null = null
 
     const checkToken = async () => {
       if (isChecking) return
@@ -37,12 +75,17 @@ export default function ConnectLinkedInPage() {
           setCheckingToken(true)
           clearInterval(intervalId)
           clearTimeout(timeoutId)
-          // Wait at least 1.5s after token detected before redirecting
-          const elapsed = Date.now() - tokenDetectedAt
-          const delay = Math.max(0, 1500 - elapsed)
-          setTimeout(() => {
-            router.push('/dashboard')
-          }, delay)
+          // Wait for popup to close before redirecting
+          const waitForPopupClose = () => {
+            if (!popupRef.current || popupRef.current.closed) {
+              setTimeout(() => {
+                router.push('/dashboard')
+              }, 500) // short delay for smoothness
+            } else {
+              popupClosedCheckId = setTimeout(waitForPopupClose, 300)
+            }
+          }
+          waitForPopupClose()
         }
       } catch (err) {
         console.error('Error checking LinkedIn token:', err)
@@ -66,23 +109,13 @@ export default function ConnectLinkedInPage() {
     return () => {
       clearInterval(intervalId)
       clearTimeout(timeoutId)
+      if (popupClosedCheckId) clearTimeout(popupClosedCheckId)
     }
   }, [success, clicked, hasLinkedinToken, router])
 
   const handleLogout = () => {
     const redirect = logout('/login')
     router.replace(redirect)
-  }
-
-  const onConnect = async () => {
-    setClicked(true)
-    try {
-      await initiateLinkedinConnect()
-    } catch {
-      // error is already set by the hook
-    } finally {
-      // keep clicked true to preserve UI until user acts
-    }
   }
 
   return (
