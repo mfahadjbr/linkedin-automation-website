@@ -98,7 +98,10 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    fetchProfile(false)
+    const timer = setTimeout(() => {
+      fetchProfile(false)
+    }, 5000) // 5 seconds delay for smoother UX
+    return () => clearTimeout(timer)
   }, [])
 
   const handleRefresh = () => {
@@ -214,9 +217,9 @@ export default function ProfilePage() {
               </div>
 
               {/* Profile Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
                 {/* Account Information */}
-                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
+                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm max-w-2xl mx-auto w-full">
                   <CardHeader className="p-4 md:p-6">
                     <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
                       <User className="h-5 w-5 text-[#004d9a]" />
@@ -225,12 +228,12 @@ export default function ProfilePage() {
                   </CardHeader>
                   <CardContent className="p-4 md:p-6 pt-0 space-y-3">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">LinkedIn User ID</p>
-                      <p className="font-mono text-sm bg-gray-100 px-3 py-2 rounded">{profile.linkedin_user_id}</p>
-                    </div>
-                    <div>
                       <p className="text-sm text-gray-500 mb-1">Full Name</p>
                       <p className="font-medium">{profile.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 mb-1">Email Address</p>
+                      <p className="font-medium">{profile.email}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500 mb-1">Email Status</p>
@@ -248,36 +251,13 @@ export default function ProfilePage() {
                         )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-
-                {/* Data Source Info */}
-                <Card className="shadow-lg border-0 bg-white/90 backdrop-blur-sm">
-                  <CardHeader className="p-4 md:p-6">
-                    <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-                      <RefreshCw className="h-5 w-5 text-[#004d9a]" />
-                      Profile Status
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 md:p-6 pt-0 space-y-3">
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Data Source</p>
-                      <Badge 
-                        variant={source === 'linkedin' ? 'default' : 'secondary'}
-                        className={source === 'linkedin' ? 'bg-blue-500' : 'bg-gray-500'}
-                      >
-                        {source === 'linkedin' ? 'Fresh from LinkedIn' : 'Cached from Database'}
-                      </Badge>
+                      <p className="text-sm text-gray-500 mb-1">Locale</p>
+                      <p className="font-medium">{profile.locale.language.toUpperCase()} - {profile.locale.country}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Last Updated</p>
+                      <p className="text-sm text-gray-500 mb-1">Last Profile Update</p>
                       <p className="font-medium text-sm">{formatDate(lastUpdated)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 mb-2">Refresh Data</p>
-                      <p className="text-xs text-gray-600">
-                        Click "Refresh Profile" to fetch the latest data from LinkedIn.
-                      </p>
                     </div>
                   </CardContent>
                 </Card>

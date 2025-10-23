@@ -25,21 +25,24 @@ export default function ConnectLinkedInPage() {
     let intervalId: NodeJS.Timeout
     let timeoutId: NodeJS.Timeout
     let isChecking = false
+    let tokenDetectedAt: number | null = null
 
     const checkToken = async () => {
       if (isChecking) return
       isChecking = true
-      
       try {
         const hasToken = await hasLinkedinToken()
         if (hasToken) {
+          if (!tokenDetectedAt) tokenDetectedAt = Date.now()
           setCheckingToken(true)
           clearInterval(intervalId)
           clearTimeout(timeoutId)
-          // Show "Completing connection" message for a moment, then redirect
+          // Wait at least 1.5s after token detected before redirecting
+          const elapsed = Date.now() - tokenDetectedAt
+          const delay = Math.max(0, 1500 - elapsed)
           setTimeout(() => {
             router.push('/dashboard')
-          }, 1500)
+          }, delay)
         }
       } catch (err) {
         console.error('Error checking LinkedIn token:', err)
