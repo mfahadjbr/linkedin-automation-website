@@ -10,6 +10,17 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useRouter } from "next/navigation"
 import { 
   Key, 
   Eye,
@@ -18,15 +29,19 @@ import {
   User,
   Bell,
   Shield,
-  Palette
+  Palette,
+  Unplug
 } from "lucide-react"
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [geminiKey, setGeminiKey] = useState("")
   const [showKey, setShowKey] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
   const [autoSave, setAutoSave] = useState(true)
+  const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
+  const [isDisconnecting, setIsDisconnecting] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem("gemini_api_key") || ""
@@ -36,6 +51,42 @@ export default function SettingsPage() {
   const saveSettings = () => {
     localStorage.setItem("gemini_api_key", geminiKey)
     // Add success feedback here
+  }
+
+  const handleDisconnectLinkedIn = async () => {
+    setIsDisconnecting(true)
+    try {
+      const token = localStorage.getItem('token')
+      
+      if (!token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch('https://backend.postsiva.com/linkedin/delete-token', {
+        method: 'DELETE',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect LinkedIn account')
+      }
+
+      // Clear all auth data
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
+      // Redirect to login
+      router.push('/login')
+    } catch (error: any) {
+      console.error('Error disconnecting LinkedIn:', error)
+      alert(error.message || 'Failed to disconnect LinkedIn account')
+    } finally {
+      setIsDisconnecting(false)
+      setShowDisconnectDialog(false)
+    }
   }
 
   return (
@@ -183,11 +234,80 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
 
+              {/* LinkedIn Integration */}
+              <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm border-red-200">
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                    <Unplug className="h-5 w-5 text-red-500" />
+                    LinkedIn Integration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 md:p-6 pt-0 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Label className="text-sm md:text-base">LinkedIn Account</Label>
+                        <p className="text-xs md:text-sm text-gray-500">
+                          Disconnect your LinkedIn account and revoke access
+                        </p>
+                      </div>
+                      <Badge variant="default" className="text-xs md:text-sm bg-green-500">Connected</Badge>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-red-900 mb-2">Warning</h4>
+                    <p className="text-xs md:text-sm text-red-700 mb-4">
+                      Disconnecting your LinkedIn account will:
+                    </p>
+                    <ul className="text-xs md:text-sm text-red-700 space-y-1 ml-4 mb-4 list-disc">
+                      <li>Revoke all access tokens</li>
+                      <li>Log you out immediately</li>
+                      <li>Require re-authentication to use the platform</li>
+                    </ul>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => setShowDisconnectDialog(true)}
+                      className="w-full h-10 md:h-11 text-sm md:text-base"
+                    >
+                      Disconnect LinkedIn Account
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
             </div>
           </div>
         </section>
       </main>
       <Footer />
+
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog open={showDisconnectDialog} onOpenChange={setShowDisconnectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                This action will disconnect your LinkedIn account and revoke all access tokens.
+              </p>
+              <p className="font-semibold text-red-600">
+                You will be logged out immediately and will need to reconnect your LinkedIn account to continue using the platform.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDisconnecting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDisconnectLinkedIn}
+              disabled={isDisconnecting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDisconnecting ? 'Disconnecting...' : 'Yes, Disconnect'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
