@@ -143,7 +143,17 @@ function VideoPostsTab() {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await fetch(`/api/proxy/video-posts?limit=${pageSize}&offset=${(page-1)*pageSize}`)
+        const token = localStorage.getItem('token')
+        
+        if (!token) {
+          throw new Error('No authentication token found')
+        }
+
+        const res = await fetch(`/api/proxy/video-posts?limit=${pageSize}&offset=${(page-1)*pageSize}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         if (!res.ok) throw new Error('Failed to fetch video posts')
         const data = await res.json()
         if (!data.success) throw new Error(data.error || 'Failed to fetch video posts')
