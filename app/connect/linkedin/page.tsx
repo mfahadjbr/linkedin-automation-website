@@ -123,8 +123,7 @@ export default function ConnectLinkedInPage() {
 
           {checkingInitialToken ? (
             <div className="mt-8 flex flex-col items-center justify-center">
-              <Spinner size="lg" className="mb-4" />
-              <div className="text-gray-700 text-base">Checking LinkedIn connection…</div>
+              <Spinner size="lg" />
             </div>
           ) : connected ? (
             <div className="mt-8 flex flex-col items-center justify-center">
@@ -196,6 +195,9 @@ export default function ConnectLinkedInPage() {
                   </AlertDescription>
                 </Alert>
               )}
+              <div className="mt-4 text-sm text-gray-600 text-center">
+                After connecting your account, please <b>refresh this page</b> to see the connected status.
+              </div>
             </>
           )}
 
