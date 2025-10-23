@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import { 
   Key, 
   Eye,
@@ -35,21 +36,26 @@ import Link from "next/link"
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
   const [geminiKey, setGeminiKey] = useState("")
   const [showKey, setShowKey] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [autoSave, setAutoSave] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
   const [twoFactorAuth, setTwoFactorAuth] = useState(false)
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const stored = localStorage.getItem("gemini_api_key") || ""
     setGeminiKey(stored)
     setNotifications(localStorage.getItem("notifications") === "true")
     setAutoSave(localStorage.getItem("autoSave") === "true")
-    setDarkMode(localStorage.getItem("darkMode") === "true")
     setTwoFactorAuth(localStorage.getItem("twoFactorAuth") === "true")
   }, [])
 
@@ -57,9 +63,12 @@ export default function SettingsPage() {
     localStorage.setItem("gemini_api_key", geminiKey)
     localStorage.setItem("notifications", String(notifications))
     localStorage.setItem("autoSave", String(autoSave))
-    localStorage.setItem("darkMode", String(darkMode))
     localStorage.setItem("twoFactorAuth", String(twoFactorAuth))
     alert("Settings saved successfully!")
+  }
+
+  const handleDarkModeToggle = (checked: boolean) => {
+    setTheme(checked ? "dark" : "light")
   }
 
   const handleDisconnectLinkedIn = async () => {
@@ -183,8 +192,9 @@ export default function SettingsPage() {
                   <Label htmlFor="dark-mode" className="text-sm md:text-base">Dark Mode</Label>
                   <Switch
                     id="dark-mode"
-                    checked={darkMode}
-                    onCheckedChange={setDarkMode}
+                    checked={mounted && theme === "dark"}
+                    onCheckedChange={handleDarkModeToggle}
+                    disabled={!mounted}
                   />
                 </div>
               </CardContent>

@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import "./globals.css"
 import { ChatbotWidget } from "@/components/chatbot-widget"
 import { AuthProvider } from "@/lib/hooks/auth/AuthContext"
+import { ThemeProvider } from "@/components/theme-provider"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,13 +26,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans`}>
-        <AuthProvider>
-          <Suspense fallback={null}>{children}</Suspense>
-        </AuthProvider>
-        <Analytics />
-        <ChatbotWidget />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+          </AuthProvider>
+          <Analytics />
+          <ChatbotWidget />
+        </ThemeProvider>
       </body>
     </html>
   )

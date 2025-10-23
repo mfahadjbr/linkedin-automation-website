@@ -58,10 +58,19 @@ function MediaPostsTab() {
                             className="w-32 h-32 object-cover rounded"
                             loading="lazy"
                             onError={(e) => {
-                              console.error('Image failed to load:', imgUrl);
-                              // Try alternative URL format
-                              const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
-                              e.currentTarget.src = altUrl;
+                              const img = e.currentTarget;
+                              // Check if we've already tried the fallback
+                              if (!img.dataset.fallbackAttempted) {
+                                console.error('Image failed to load:', imgUrl);
+                                // Try alternative URL format
+                                const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
+                                img.dataset.fallbackAttempted = 'true';
+                                img.src = altUrl;
+                              } else {
+                                // Both URLs failed, use placeholder
+                                console.error('Both image URLs failed, using placeholder');
+                                img.src = '/placeholder.jpg';
+                              }
                             }}
                           />
                         );
@@ -80,9 +89,18 @@ function MediaPostsTab() {
                                 className="w-20 h-20 object-cover rounded"
                                 loading="lazy"
                                 onError={(e) => {
-                                  console.error('Multi-image failed to load:', imgUrl);
-                                  const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
-                                  e.currentTarget.src = altUrl;
+                                  const imgElement = e.currentTarget;
+                                  // Check if we've already tried the fallback
+                                  if (!imgElement.dataset.fallbackAttempted) {
+                                    console.error('Multi-image failed to load:', imgUrl);
+                                    const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
+                                    imgElement.dataset.fallbackAttempted = 'true';
+                                    imgElement.src = altUrl;
+                                  } else {
+                                    // Both URLs failed, use placeholder
+                                    console.error('Both multi-image URLs failed, using placeholder');
+                                    imgElement.src = '/placeholder.jpg';
+                                  }
                                 }}
                               />
                             );
@@ -210,11 +228,20 @@ function VideoPostsTab() {
                             preload="metadata"
                             playsInline
                             onError={(e) => {
-                              console.error('Video failed to load:', videoUrl);
-                              // Try alternative URL format
-                              const altUrl = `https://media.licdn.com/dms/video/${assetId}/original`;
-                              const source = e.currentTarget.querySelector('source');
-                              if (source) source.src = altUrl;
+                              const videoElement = e.currentTarget;
+                              const source = videoElement.querySelector('source');
+                              // Check if we've already tried the fallback
+                              if (source && !videoElement.dataset.fallbackAttempted) {
+                                console.error('Video failed to load:', videoUrl);
+                                // Try alternative URL format
+                                const altUrl = `https://media.licdn.com/dms/video/${assetId}/original`;
+                                videoElement.dataset.fallbackAttempted = 'true';
+                                source.src = altUrl;
+                                videoElement.load(); // Reload the video with new source
+                              } else {
+                                // Both URLs failed
+                                console.error('Both video URLs failed, cannot load video');
+                              }
                             }}
                           >
                             <source src={videoUrl} type="video/mp4" />
