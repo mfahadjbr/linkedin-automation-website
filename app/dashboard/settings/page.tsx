@@ -71,6 +71,7 @@ export default function SettingsPage() {
         throw new Error('No authentication token found')
       }
 
+      // First, call the API to delete the token
       const response = await fetch('https://backend.postsiva.com/linkedin/delete-token', {
         method: 'DELETE',
         headers: {
@@ -83,16 +84,14 @@ export default function SettingsPage() {
         throw new Error('Failed to disconnect LinkedIn account')
       }
 
-      // Clear all auth data
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_data')
+      // After successful API call, clear all localStorage data
+      localStorage.clear()
       
-      // Redirect to login
-      router.push('/login')
+      // Force redirect to login page using window.location for hard navigation
+      window.location.href = '/login'
     } catch (error: any) {
       console.error('Error disconnecting LinkedIn:', error)
       alert(error.message || 'Failed to disconnect LinkedIn account')
-    } finally {
       setIsDisconnecting(false)
       setShowDisconnectDialog(false)
     }

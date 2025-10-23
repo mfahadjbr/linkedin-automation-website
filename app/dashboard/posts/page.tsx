@@ -49,22 +49,29 @@ function MediaPostsTab() {
                       </div>
                       {tab === 'image' && post.image_urn && (() => {
                         const assetId = post.image_urn.split(':').pop();
-                        const imgUrl = `https://media.licdn.com/dms/image/C4D/${assetId}/original`;
-                        console.log('Image Post URL:', imgUrl, post);
+                        const imgUrl = `https://media.licdn.com/dms/image/v2/${assetId}/original`;
+                        console.log('Image Post URL:', imgUrl, 'Asset ID:', assetId, post);
                         return (
                           <img
                             src={imgUrl}
                             alt={post.image_filename || 'Image'}
                             className="w-32 h-32 object-cover rounded"
                             loading="lazy"
+                            onError={(e) => {
+                              console.error('Image failed to load:', imgUrl);
+                              // Try alternative URL format
+                              const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
+                              e.currentTarget.src = altUrl;
+                            }}
                           />
                         );
                       })()}
                       {tab === 'multi-image' && post.images && (
                         <div className="flex gap-2 flex-wrap mt-2 md:mt-0">
                           {post.images.map((img: any, idx: number) => {
-                            const imgUrl = `https://media.licdn.com/dms/image/${img.asset_urn.split(':').pop()?.toLowerCase()}/original`;
-                            console.log('Multi-Image Post URL:', imgUrl, img);
+                            const assetId = img.asset_urn.split(':').pop();
+                            const imgUrl = `https://media.licdn.com/dms/image/v2/${assetId}/original`;
+                            console.log('Multi-Image Post URL:', imgUrl, 'Asset ID:', assetId, img);
                             return (
                               <img
                                 key={idx}
@@ -72,6 +79,11 @@ function MediaPostsTab() {
                                 alt={img.filename}
                                 className="w-20 h-20 object-cover rounded"
                                 loading="lazy"
+                                onError={(e) => {
+                                  console.error('Multi-image failed to load:', imgUrl);
+                                  const altUrl = `https://media.licdn.com/dms/image/${assetId}/original`;
+                                  e.currentTarget.src = altUrl;
+                                }}
                               />
                             );
                           })}
@@ -186,16 +198,26 @@ function VideoPostsTab() {
                         {post.text && <div className="text-sm text-gray-700 mt-2">{post.text}</div>}
                       </div>
                       {post.video_urn && (() => {
-                        const videoUrl = `https://media.licdn.com/dms/video/${post.video_urn.split(':').pop()?.toLowerCase()}/original`;
-                        console.log('Video Post URL:', videoUrl, post);
+                        const assetId = post.video_urn.split(':').pop();
+                        const videoUrl = `https://media.licdn.com/dms/video/v2/${assetId}/original`;
+                        console.log('Video Post URL:', videoUrl, 'Asset ID:', assetId, post);
                         return (
                           <video
                             controls
+                            controlsList="nodownload"
                             className="w-48 h-32 rounded bg-black mt-4 md:mt-0"
                             poster="/placeholder.jpg"
-                            preload="none"
+                            preload="metadata"
+                            playsInline
+                            onError={(e) => {
+                              console.error('Video failed to load:', videoUrl);
+                              // Try alternative URL format
+                              const altUrl = `https://media.licdn.com/dms/video/${assetId}/original`;
+                              const source = e.currentTarget.querySelector('source');
+                              if (source) source.src = altUrl;
+                            }}
                           >
-                            <source src={videoUrl} />
+                            <source src={videoUrl} type="video/mp4" />
                             Your browser does not support the video tag.
                           </video>
                         );
